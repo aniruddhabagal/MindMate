@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,15 +10,17 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="css/style.css"> <!-Link to your CSS file -->
 </head>
+
 <body class="bg-gray-50 min-h-screen">
     <!-- Mobile Menu Overlay -->
     <div id="mobileOverlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden md:hidden"></div>
-    
+
     <!-- Sidebar -->
     <div id="sidebar" class="sidebar bg-white w-64 min-h-screen shadow-xl border-r border-gray-200">
         <div class="p-6 border-b border-gray-200">
             <div class="flex items-center gap-3">
-                <div class="w-10 h-10 bg-gradient-to-r from-purple-500 to-indigo-600 rounded-xl flex items-center justify-center">
+                <div
+                    class="w-10 h-10 bg-gradient-to-r from-purple-500 to-indigo-600 rounded-xl flex items-center justify-center">
                     <i class="fas fa-brain text-white text-lg"></i>
                 </div>
                 <div>
@@ -26,42 +29,47 @@
                 </div>
             </div>
         </div>
-        
+
         <nav class="p-4">
             <ul class="space-y-2">
                 <li>
-                    <button onclick="showPage('home')" class="nav-btn w-full flex items-center gap-3 px-4 py-3 text-left rounded-lg hover:bg-gray-100 transition-colors">
+                    <button onclick="showPage('home')"
+                        class="nav-btn w-full flex items-center gap-3 px-4 py-3 text-left rounded-lg hover:bg-gray-100 transition-colors">
                         <i class="fas fa-home text-gray-600"></i>
                         <span class="font-medium text-gray-700">Home</span>
                     </button>
                 </li>
                 <li>
-                    <button onclick="showPage('chat')" class="nav-btn w-full flex items-center gap-3 px-4 py-3 text-left rounded-lg hover:bg-gray-100 transition-colors">
+                    <button onclick="showPage('chat')"
+                        class="nav-btn w-full flex items-center gap-3 px-4 py-3 text-left rounded-lg hover:bg-gray-100 transition-colors">
                         <i class="fas fa-comments text-gray-600"></i>
                         <span class="font-medium text-gray-700">Chat</span>
                     </button>
                 </li>
                 <li>
-                    <button onclick="showPage('mood-tracker')" class="nav-btn w-full flex items-center gap-3 px-4 py-3 text-left rounded-lg hover:bg-gray-100 transition-colors">
+                    <button onclick="showPage('mood-tracker')"
+                        class="nav-btn w-full flex items-center gap-3 px-4 py-3 text-left rounded-lg hover:bg-gray-100 transition-colors">
                         <i class="fas fa-chart-line text-gray-600"></i>
                         <span class="font-medium text-gray-700">Mood Tracker</span>
                     </button>
                 </li>
                 <li>
-                    <button onclick="showPage('journal')" class="nav-btn w-full flex items-center gap-3 px-4 py-3 text-left rounded-lg hover:bg-gray-100 transition-colors">
+                    <button onclick="showPage('journal')"
+                        class="nav-btn w-full flex items-center gap-3 px-4 py-3 text-left rounded-lg hover:bg-gray-100 transition-colors">
                         <i class="fas fa-book text-gray-600"></i>
                         <span class="font-medium text-gray-700">Journal</span>
                     </button>
                 </li>
                 <li>
-                    <button onclick="showPage('resources')" class="nav-btn w-full flex items-center gap-3 px-4 py-3 text-left rounded-lg hover:bg-gray-100 transition-colors">
+                    <button onclick="showPage('resources')"
+                        class="nav-btn w-full flex items-center gap-3 px-4 py-3 text-left rounded-lg hover:bg-gray-100 transition-colors">
                         <i class="fas fa-heart text-gray-600"></i>
                         <span class="font-medium text-gray-700">Resources</span>
                     </button>
                 </li>
             </ul>
         </nav>
-        
+
         <div class="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200">
             <div class="bg-blue-50 rounded-lg p-3">
                 <p class="text-sm text-blue-800 font-medium">✨ Daily Streak</p>
@@ -69,7 +77,7 @@
             </div>
         </div>
     </div>
-    
+
     <!-- Main Content -->
     <div class="md:ml-64 min-h-screen">
         <!-- Header -->
@@ -82,15 +90,87 @@
                     <h2 id="pageTitle" class="text-2xl font-bold text-gray-900">Welcome Back!</h2>
                 </div>
                 <div class="flex items-center gap-4">
-                    <button class="relative p-2 text-gray-600 hover:text-gray-900">
-                        <i class="fas fa-bell text-lg"></i>
-                        <span class="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-xs text-white flex items-center justify-center">2</span>
-                    </button>
-                    <div class="w-8 h-8 bg-gradient-to-r from-purple-500 to-indigo-600 rounded-full"></div>
+                    <div id="userProfile" class="hidden items-center gap-2">
+                        <span id="usernameDisplay" class="text-sm font-medium text-gray-700"></span>
+                        <button id="logoutBtn"
+                            class="text-sm text-purple-600 hover:text-purple-800 font-medium">Logout</button>
+                    </div>
+                    <div id="loginPrompt" class="flex items-center gap-4">
+                        <button id="openLoginModalBtn"
+                            class="text-sm font-medium text-purple-600 hover:text-purple-800">Login</button>
+                        <button class="relative p-2 text-gray-600 hover:text-gray-900">
+                            <i class="fas fa-bell text-lg"></i>
+                            <span
+                                class="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-xs text-white flex items-center justify-center">2</span>
+                        </button>
+                        <div class="w-8 h-8 bg-gradient-to-r from-purple-500 to-indigo-600 rounded-full"></div>
+                    </div>
                 </div>
-            </div>
         </header>
-        
+
+        <!-- Auth Modals Container (Initially Hidden) -->
+        <div id="authModalContainer"
+            class="fixed inset-0 bg-black bg-opacity-75 z-50 hidden flex items-center justify-center p-4">
+            <!-- Login Form -->
+            <div id="loginFormContainer" class="bg-white p-8 rounded-lg shadow-xl w-full max-w-md hidden">
+                <h3 class="text-2xl font-bold mb-6 text-gray-800 text-center">Login to MindMate</h3>
+                <form id="loginForm">
+                    <div class="mb-4">
+                        <label for="loginUsername" class="block text-sm font-medium text-gray-700 mb-1">Username</label>
+                        <input type="text" id="loginUsername" name="username" required
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
+                    </div>
+                    <div class="mb-6">
+                        <label for="loginPassword" class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                        <input type="password" id="loginPassword" name="password" required
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
+                    </div>
+                    <button type="submit"
+                        class="w-full bg-gradient-to-r from-purple-500 to-indigo-600 text-white py-2.5 rounded-lg hover:shadow-lg transition-all text-sm font-semibold">Login</button>
+                    <p class="text-center text-sm text-gray-600 mt-4">
+                        Don't have an account? <button type="button" id="showRegisterBtn"
+                            class="text-purple-600 hover:underline font-medium">Register here</button>
+                    </p>
+                    <button type="button" id="closeAuthModalBtnLogin"
+                        class="absolute top-4 right-4 text-gray-500 hover:text-gray-700">×</button>
+                </form>
+            </div>
+
+            <!-- Registration Form -->
+            <div id="registerFormContainer" class="bg-white p-8 rounded-lg shadow-xl w-full max-w-md hidden">
+                <h3 class="text-2xl font-bold mb-6 text-gray-800 text-center">Create Account</h3>
+                <form id="registerForm">
+                    <div class="mb-4">
+                        <label for="registerUsername"
+                            class="block text-sm font-medium text-gray-700 mb-1">Username</label>
+                        <input type="text" id="registerUsername" name="username" required
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
+                    </div>
+                    <div class="mb-6">
+                        <label for="registerPassword"
+                            class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                        <input type="password" id="registerPassword" name="password" required
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
+                    </div>
+                    <div class="mb-6">
+                        <label for="registerConfirmPassword"
+                            class="block text-sm font-medium text-gray-700 mb-1">Confirm Password</label>
+                        <input type="password" id="registerConfirmPassword" name="confirmPassword" required
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
+                    </div>
+                    <button type="submit"
+                        class="w-full bg-gradient-to-r from-purple-500 to-indigo-600 text-white py-2.5 rounded-lg hover:shadow-lg transition-all text-sm font-semibold">Register</button>
+                    <p class="text-center text-sm text-gray-600 mt-4">
+                        Already have an account? <button type="button" id="showLoginBtn"
+                            class="text-purple-600 hover:underline font-medium">Login here</button>
+                    </p>
+                    <button type="button" id="closeAuthModalBtnRegister"
+                        class="absolute top-4 right-4 text-gray-500 hover:text-gray-700">×</button>
+                </form>
+            </div>
+            <p id="authError" class="text-red-500 text-sm mt-2 text-center hidden"></p>
+        </div>
+
         <!-- Page Content -->
         <main class="p-6">
             <!-- Home Page -->
@@ -108,53 +188,61 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <!-- Quick Mood Check -->
                     <div class="bg-white rounded-2xl shadow-lg p-6 mb-8">
                         <h4 class="text-xl font-semibold text-gray-900 mb-6">Quick Mood Check</h4>
                         <div class="grid grid-cols-2 md:grid-cols-5 gap-4" id="quickMoodGrid">
-                            <div class="mood-card bg-white border-2 border-gray-200 rounded-xl p-4 text-center" data-mood="happy">
+                            <div class="mood-card bg-white border-2 border-gray-200 rounded-xl p-4 text-center"
+                                data-mood="happy">
                                 <div class="text-3xl mb-2">😊</div>
                                 <p class="text-sm font-medium text-gray-700">Happy</p>
                             </div>
-                            <div class="mood-card bg-white border-2 border-gray-200 rounded-xl p-4 text-center" data-mood="sad">
+                            <div class="mood-card bg-white border-2 border-gray-200 rounded-xl p-4 text-center"
+                                data-mood="sad">
                                 <div class="text-3xl mb-2">😢</div>
                                 <p class="text-sm font-medium text-gray-700">Sad</p>
                             </div>
-                            <div class="mood-card bg-white border-2 border-gray-200 rounded-xl p-4 text-center" data-mood="anxious">
+                            <div class="mood-card bg-white border-2 border-gray-200 rounded-xl p-4 text-center"
+                                data-mood="anxious">
                                 <div class="text-3xl mb-2">😰</div>
                                 <p class="text-sm font-medium text-gray-700">Anxious</p>
                             </div>
-                            <div class="mood-card bg-white border-2 border-gray-200 rounded-xl p-4 text-center" data-mood="calm">
+                            <div class="mood-card bg-white border-2 border-gray-200 rounded-xl p-4 text-center"
+                                data-mood="calm">
                                 <div class="text-3xl mb-2">😌</div>
                                 <p class="text-sm font-medium text-gray-700">Calm</p>
                             </div>
-                            <div class="mood-card bg-white border-2 border-gray-200 rounded-xl p-4 text-center" data-mood="stressed">
+                            <div class="mood-card bg-white border-2 border-gray-200 rounded-xl p-4 text-center"
+                                data-mood="stressed">
                                 <div class="text-3xl mb-2">😵</div>
                                 <p class="text-sm font-medium text-gray-700">Stressed</p>
                             </div>
                         </div>
                     </div>
-                    
+
                     <!-- Quick Actions -->
                     <div class="grid md:grid-cols-3 gap-6 mb-8">
-                        <div class="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-shadow cursor-pointer" onclick="showPage('chat')">
+                        <div class="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-shadow cursor-pointer"
+                            onclick="showPage('chat')">
                             <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mb-4">
                                 <i class="fas fa-comments text-blue-600 text-xl"></i>
                             </div>
                             <h5 class="font-semibold text-gray-900 mb-2">Start Chatting</h5>
                             <p class="text-gray-600 text-sm">Talk about what's on your mind</p>
                         </div>
-                        
-                        <div class="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-shadow cursor-pointer" onclick="showPage('journal')">
+
+                        <div class="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-shadow cursor-pointer"
+                            onclick="showPage('journal')">
                             <div class="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center mb-4">
                                 <i class="fas fa-pen text-green-600 text-xl"></i>
                             </div>
                             <h5 class="font-semibold text-gray-900 mb-2">Journal Entry</h5>
                             <p class="text-gray-600 text-sm">Reflect and write your thoughts</p>
                         </div>
-                        
-                        <div class="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-shadow cursor-pointer" onclick="openBreathingExercise()">
+
+                        <div class="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-shadow cursor-pointer"
+                            onclick="openBreathingExercise()">
                             <div class="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mb-4">
                                 <i class="fas fa-leaf text-purple-600 text-xl"></i>
                             </div>
@@ -162,7 +250,7 @@
                             <p class="text-gray-600 text-sm">Take a moment to breathe</p>
                         </div>
                     </div>
-                    
+
                     <!-- Recent Activity -->
                     <div class="bg-white rounded-2xl shadow-lg p-6">
                         <h4 class="text-xl font-semibold text-gray-900 mb-4">Recent Activity</h4>
@@ -189,7 +277,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <!-- Chat Page -->
             <div id="chat" class="page">
                 <div class="max-w-4xl mx-auto">
@@ -197,35 +285,39 @@
                         <!-- Chat Header -->
                         <div class="p-6 border-b border-gray-200">
                             <div class="flex items-center gap-4">
-                                <div class="w-12 h-12 bg-gradient-to-r from-purple-500 to-indigo-600 rounded-full flex items-center justify-center">
+                                <div
+                                    class="w-12 h-12 bg-gradient-to-r from-purple-500 to-indigo-600 rounded-full flex items-center justify-center">
                                     <i class="fas fa-robot text-white"></i>
                                 </div>
                                 <div>
                                     <h3 class="font-semibold text-gray-900">MindMate Assistant</h3>
                                     <p class="text-sm text-green-600 flex items-center gap-1">
-                                        <div class="w-2 h-2 bg-green-500 rounded-full"></div>
-                                        Online
+                                    <div class="w-2 h-2 bg-green-500 rounded-full"></div>
+                                    Online
                                     </p>
                                 </div>
                             </div>
                         </div>
-                        
+
                         <!-- Chat Messages -->
                         <div id="chatMessages" class="flex-1 p-6 overflow-y-auto space-y-4">
                             <div class="flex gap-3">
-                                <div class="w-8 h-8 bg-gradient-to-r from-purple-500 to-indigo-600 rounded-full flex items-center justify-center flex-shrink-0">
+                                <div
+                                    class="w-8 h-8 bg-gradient-to-r from-purple-500 to-indigo-600 rounded-full flex items-center justify-center flex-shrink-0">
                                     <i class="fas fa-robot text-white text-sm"></i>
                                 </div>
                                 <div class="chat-bubble-bot p-4 max-w-md">
-                                    <p class="text-gray-800">Hello! I'm here to listen and support you. How are you feeling today? 😊</p>
+                                    <p class="text-gray-800">Hello! I'm here to listen and support you. How are you
+                                        feeling today? 😊</p>
                                 </div>
                             </div>
                         </div>
-                        
+
                         <!-- Typing Indicator -->
                         <div id="typingIndicator" class="px-6 hidden">
                             <div class="flex gap-3">
-                                <div class="w-8 h-8 bg-gradient-to-r from-purple-500 to-indigo-600 rounded-full flex items-center justify-center flex-shrink-0">
+                                <div
+                                    class="w-8 h-8 bg-gradient-to-r from-purple-500 to-indigo-600 rounded-full flex items-center justify-center flex-shrink-0">
                                     <i class="fas fa-robot text-white text-sm"></i>
                                 </div>
                                 <div class="chat-bubble-bot typing-indicator">
@@ -235,34 +327,30 @@
                                 </div>
                             </div>
                         </div>
-                        
+
                         <!-- Chat Input -->
                         <div class="p-6 border-t border-gray-200">
                             <div class="flex gap-4">
-                                <input 
-                                    type="text" 
-                                    id="chatInput" 
-                                    placeholder="Share what's on your mind..." 
-                                    class="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                                >
-                                <button 
-                                    id="sendBtn" 
-                                    onclick="sendMessage()" 
-                                    class="bg-gradient-to-r from-purple-500 to-indigo-600 text-white px-6 py-3 rounded-xl hover:shadow-lg transition-all"
-                                >
+                                <input type="text" id="chatInput" placeholder="Share what's on your mind..."
+                                    class="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                                <button id="sendBtn" onclick="sendMessage()"
+                                    class="bg-gradient-to-r from-purple-500 to-indigo-600 text-white px-6 py-3 rounded-xl hover:shadow-lg transition-all">
                                     <i class="fas fa-paper-plane"></i>
                                 </button>
                             </div>
-                            
+
                             <!-- Quick Responses -->
                             <div class="flex gap-2 mt-4 flex-wrap">
-                                <button onclick="quickResponse('I feel stressed')" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-full text-sm hover:bg-gray-200 transition-colors">
+                                <button onclick="quickResponse('I feel stressed')"
+                                    class="px-4 py-2 bg-gray-100 text-gray-700 rounded-full text-sm hover:bg-gray-200 transition-colors">
                                     I feel stressed
                                 </button>
-                                <button onclick="quickResponse('I need to talk')" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-full text-sm hover:bg-gray-200 transition-colors">
+                                <button onclick="quickResponse('I need to talk')"
+                                    class="px-4 py-2 bg-gray-100 text-gray-700 rounded-full text-sm hover:bg-gray-200 transition-colors">
                                     I need to talk
                                 </button>
-                                <button onclick="quickResponse('Help me relax')" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-full text-sm hover:bg-gray-200 transition-colors">
+                                <button onclick="quickResponse('Help me relax')"
+                                    class="px-4 py-2 bg-gray-100 text-gray-700 rounded-full text-sm hover:bg-gray-200 transition-colors">
                                     Help me relax
                                 </button>
                             </div>
@@ -270,7 +358,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <!-- Mood Tracker Page -->
             <div id="mood-tracker" class="page">
                 <div class="max-w-6xl mx-auto">
@@ -287,7 +375,7 @@
                                 </div>
                             </div>
                         </div>
-                        
+
                         <div class="bg-white rounded-2xl shadow-lg p-6">
                             <div class="flex items-center justify-between">
                                 <div>
@@ -299,7 +387,7 @@
                                 </div>
                             </div>
                         </div>
-                        
+
                         <div class="bg-white rounded-2xl shadow-lg p-6">
                             <div class="flex items-center justify-between">
                                 <div>
@@ -311,7 +399,7 @@
                                 </div>
                             </div>
                         </div>
-                        
+
                         <div class="bg-white rounded-2xl shadow-lg p-6">
                             <div class="flex items-center justify-between">
                                 <div>
@@ -324,7 +412,7 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <!-- Mood Chart -->
                     <div class="bg-white rounded-2xl shadow-lg p-6 mb-8">
                         <div class="flex items-center justify-between mb-6">
@@ -339,7 +427,7 @@
                             <canvas id="moodChart"></canvas>
                         </div>
                     </div>
-                    
+
                     <!-- Recent Mood Entries -->
                     <div class="bg-white rounded-2xl shadow-lg p-6">
                         <h3 class="text-xl font-semibold text-gray-900 mb-6">Recent Entries</h3>
@@ -357,7 +445,7 @@
                                     <p class="text-xs text-gray-500">Great day at work</p>
                                 </div>
                             </div>
-                            
+
                             <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                                 <div class="flex items-center gap-4">
                                     <span class="text-2xl">😌</span>
@@ -371,7 +459,7 @@
                                     <p class="text-xs text-gray-500">Relaxing evening</p>
                                 </div>
                             </div>
-                            
+
                             <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                                 <div class="flex items-center gap-4">
                                     <span class="text-2xl">😰</span>
@@ -389,7 +477,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <!-- Journal Page -->
             <div id="journal" class="page">
                 <div class="max-w-4xl mx-auto">
@@ -400,54 +488,64 @@
                                 <h3 class="text-2xl font-bold text-gray-900">Your Journal</h3>
                                 <p class="text-gray-600">Express your thoughts and feelings</p>
                             </div>
-                            <button onclick="newJournalEntry()" class="bg-gradient-to-r from-purple-500 to-indigo-600 text-white px-6 py-3 rounded-xl hover:shadow-lg transition-all">
+                            <button onclick="newJournalEntry()"
+                                class="bg-gradient-to-r from-purple-500 to-indigo-600 text-white px-6 py-3 rounded-xl hover:shadow-lg transition-all">
                                 <i class="fas fa-plus mr-2"></i>New Entry
                             </button>
                         </div>
                     </div>
-                    
+
                     <!-- Journal Prompts -->
                     <div class="bg-white rounded-2xl shadow-lg p-6 mb-8">
                         <h4 class="text-lg font-semibold text-gray-900 mb-4">Daily Prompts</h4>
                         <div class="grid md:grid-cols-2 gap-4">
-                            <div class="p-4 bg-blue-50 rounded-lg cursor-pointer hover:bg-blue-100 transition-colors" onclick="usePrompt('What made you smile today?')">
+                            <div class="p-4 bg-blue-50 rounded-lg cursor-pointer hover:bg-blue-100 transition-colors"
+                                onclick="usePrompt('What made you smile today?')">
                                 <p class="text-blue-800 font-medium">💙 What made you smile today?</p>
                             </div>
-                            <div class="p-4 bg-green-50 rounded-lg cursor-pointer hover:bg-green-100 transition-colors" onclick="usePrompt('What challenge did you overcome?')">
+                            <div class="p-4 bg-green-50 rounded-lg cursor-pointer hover:bg-green-100 transition-colors"
+                                onclick="usePrompt('What challenge did you overcome?')">
                                 <p class="text-green-800 font-medium">🌱 What challenge did you overcome?</p>
                             </div>
-                            <div class="p-4 bg-purple-50 rounded-lg cursor-pointer hover:bg-purple-100 transition-colors" onclick="usePrompt('What are you grateful for?')">
+                            <div class="p-4 bg-purple-50 rounded-lg cursor-pointer hover:bg-purple-100 transition-colors"
+                                onclick="usePrompt('What are you grateful for?')">
                                 <p class="text-purple-800 font-medium">🙏 What are you grateful for?</p>
                             </div>
-                            <div class="p-4 bg-yellow-50 rounded-lg cursor-pointer hover:bg-yellow-100 transition-colors" onclick="usePrompt('How did you take care of yourself today?')">
+                            <div class="p-4 bg-yellow-50 rounded-lg cursor-pointer hover:bg-yellow-100 transition-colors"
+                                onclick="usePrompt('How did you take care of yourself today?')">
                                 <p class="text-yellow-800 font-medium">✨ How did you take care of yourself today?</p>
                             </div>
                         </div>
                     </div>
-                    
+
                     <!-- Journal Entry Form -->
                     <div id="journalForm" class="bg-white rounded-2xl shadow-lg p-6 mb-8 hidden">
                         <h4 class="text-lg font-semibold text-gray-900 mb-4">New Journal Entry</h4>
                         <div class="space-y-4">
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Title (optional)</label>
-                                <input type="text" id="journalTitle" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
+                                <input type="text" id="journalTitle"
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Your thoughts</label>
-                                <textarea id="journalContent" rows="8" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500" placeholder="Write about your day, thoughts, feelings..."></textarea>
+                                <textarea id="journalContent" rows="8"
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                    placeholder="Write about your day, thoughts, feelings..."></textarea>
                             </div>
                             <div class="flex gap-4">
-                                <button onclick="saveJournalEntry()" class="bg-gradient-to-r from-purple-500 to-indigo-600 text-white px-6 py-2 rounded-lg hover:shadow-lg transition-all">
+                                <button onclick="saveJournalEntry()"
+                                    class="bg-gradient-to-r from-purple-500 to-indigo-600 text-white px-6 py-2 rounded-lg hover:shadow-lg transition-all">
                                     Save Entry
                                 </button>
-                                <button onclick="cancelJournalEntry()" class="border border-gray-300 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-50 transition-all">
+                                <button onclick="cancelJournalEntry()"
+                                    class="border border-gray-300 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-50 transition-all">
                                     Cancel
                                 </button>
                             </div>
                         </div>
                     </div>
-                    
+
                     <!-- Recent Journal Entries -->
                     <div class="bg-white rounded-2xl shadow-lg p-6">
                         <h4 class="text-lg font-semibold text-gray-900 mb-6">Recent Entries</h4>
@@ -457,7 +555,10 @@
                                     <h5 class="font-medium text-gray-900">Grateful Thursday</h5>
                                     <span class="text-sm text-gray-500">Today, 6:30 PM</span>
                                 </div>
-                                <p class="text-gray-700 text-sm leading-relaxed">Today I'm grateful for the small moments - my morning coffee, a text from a friend, and the sunset I caught on my evening walk. Sometimes it's these little things that make the biggest difference...</p>
+                                <p class="text-gray-700 text-sm leading-relaxed">Today I'm grateful for the small
+                                    moments - my morning coffee, a text from a friend, and the sunset I caught on my
+                                    evening walk. Sometimes it's these little things that make the biggest difference...
+                                </p>
                                 <div class="flex items-center gap-4 mt-3">
                                     <button class="text-gray-500 hover:text-gray-700 text-sm">
                                         <i class="fas fa-edit mr-1"></i>Edit
@@ -467,13 +568,16 @@
                                     </button>
                                 </div>
                             </div>
-                            
+
                             <div class="border-l-4 border-blue-500 pl-6 py-4">
                                 <div class="flex items-center justify-between mb-2">
                                     <h5 class="font-medium text-gray-900">Overcoming Anxiety</h5>
                                     <span class="text-sm text-gray-500">Yesterday, 9:15 AM</span>
                                 </div>
-                                <p class="text-gray-700 text-sm leading-relaxed">Had a big presentation today and felt really anxious beforehand. Used the breathing techniques from MindMate and it actually helped calm me down. The presentation went well and I'm proud of myself for pushing through...</p>
+                                <p class="text-gray-700 text-sm leading-relaxed">Had a big presentation today and felt
+                                    really anxious beforehand. Used the breathing techniques from MindMate and it
+                                    actually helped calm me down. The presentation went well and I'm proud of myself for
+                                    pushing through...</p>
                                 <div class="flex items-center gap-4 mt-3">
                                     <button class="text-gray-500 hover:text-gray-700 text-sm">
                                         <i class="fas fa-edit mr-1"></i>Edit
@@ -483,13 +587,15 @@
                                     </button>
                                 </div>
                             </div>
-                            
+
                             <div class="border-l-4 border-green-500 pl-6 py-4">
                                 <div class="flex items-center justify-between mb-2">
                                     <h5 class="font-medium text-gray-900">Weekend Reflections</h5>
                                     <span class="text-sm text-gray-500">2 days ago, 8:00 PM</span>
                                 </div>
-                                <p class="text-gray-700 text-sm leading-relaxed">Spent the weekend with family and realized how important these connections are. We laughed, shared stories, and I felt so supported. Mental health isn't just about managing the hard times...</p>
+                                <p class="text-gray-700 text-sm leading-relaxed">Spent the weekend with family and
+                                    realized how important these connections are. We laughed, shared stories, and I felt
+                                    so supported. Mental health isn't just about managing the hard times...</p>
                                 <div class="flex items-center gap-4 mt-3">
                                     <button class="text-gray-500 hover:text-gray-700 text-sm">
                                         <i class="fas fa-edit mr-1"></i>Edit
@@ -503,7 +609,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <!-- Resources Page -->
             <div id="resources" class="page">
                 <div class="max-w-6xl mx-auto">
@@ -515,7 +621,8 @@
                             </div>
                             <div>
                                 <h3 class="text-lg font-semibold text-red-900">In Crisis? Get Help Now</h3>
-                                <p class="text-red-700 text-sm">If you're having thoughts of self-harm, please reach out immediately</p>
+                                <p class="text-red-700 text-sm">If you're having thoughts of self-harm, please reach out
+                                    immediately</p>
                             </div>
                         </div>
                         <div class="grid md:grid-cols-3 gap-4">
@@ -533,106 +640,128 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <!-- Coping Tools -->
                     <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-                        <div class="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-shadow cursor-pointer" onclick="openBreathingExercise()">
+                        <div class="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-shadow cursor-pointer"
+                            onclick="openBreathingExercise()">
                             <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mb-4">
                                 <i class="fas fa-wind text-blue-600"></i>
                             </div>
                             <h4 class="font-semibold text-gray-900 mb-2">Breathing Exercises</h4>
-                            <p class="text-gray-600 text-sm">Guided breathing techniques to help you relax and center yourself</p>
+                            <p class="text-gray-600 text-sm">Guided breathing techniques to help you relax and center
+                                yourself</p>
                         </div>
-                        
-                        <div class="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-shadow cursor-pointer" onclick="openMeditationGuide()">
+
+                        <div class="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-shadow cursor-pointer"
+                            onclick="openMeditationGuide()">
                             <div class="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mb-4">
                                 <i class="fas fa-meditation text-purple-600"></i>
                             </div>
                             <h4 class="font-semibold text-gray-900 mb-2">Meditation Guide</h4>
-                            <p class="text-gray-600 text-sm">Simple meditation practices for mindfulness and stress relief</p>
+                            <p class="text-gray-600 text-sm">Simple meditation practices for mindfulness and stress
+                                relief</p>
                         </div>
-                        
-                        <div class="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-shadow cursor-pointer" onclick="openGratitudePractice()">
+
+                        <div class="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-shadow cursor-pointer"
+                            onclick="openGratitudePractice()">
                             <div class="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center mb-4">
                                 <i class="fas fa-heart text-green-600"></i>
                             </div>
                             <h4 class="font-semibold text-gray-900 mb-2">Gratitude Practice</h4>
-                            <p class="text-gray-600 text-sm">Daily gratitude exercises to shift perspective and boost mood</p>
+                            <p class="text-gray-600 text-sm">Daily gratitude exercises to shift perspective and boost
+                                mood</p>
                         </div>
-                        
-                        <div class="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-shadow cursor-pointer" onclick="openProgressiveRelaxation()">
+
+                        <div class="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-shadow cursor-pointer"
+                            onclick="openProgressiveRelaxation()">
                             <div class="w-12 h-12 bg-yellow-100 rounded-xl flex items-center justify-center mb-4">
                                 <i class="fas fa-spa text-yellow-600"></i>
                             </div>
                             <h4 class="font-semibold text-gray-900 mb-2">Progressive Relaxation</h4>
                             <p class="text-gray-600 text-sm">Step-by-step muscle relaxation techniques</p>
                         </div>
-                        
-                        <div class="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-shadow cursor-pointer" onclick="openGroundingTechniques()">
+
+                        <div class="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-shadow cursor-pointer"
+                            onclick="openGroundingTechniques()">
                             <div class="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center mb-4">
                                 <i class="fas fa-anchor text-indigo-600"></i>
                             </div>
                             <h4 class="font-semibold text-gray-900 mb-2">Grounding Techniques</h4>
-                            <p class="text-gray-600 text-sm">Methods to stay present and manage overwhelming feelings</p>
+                            <p class="text-gray-600 text-sm">Methods to stay present and manage overwhelming feelings
+                            </p>
                         </div>
-                        
-                        <div class="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-shadow cursor-pointer" onclick="openSelfCareIdeas()">
+
+                        <div class="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-shadow cursor-pointer"
+                            onclick="openSelfCareIdeas()">
                             <div class="w-12 h-12 bg-pink-100 rounded-xl flex items-center justify-center mb-4">
                                 <i class="fas fa-sparkles text-pink-600"></i>
                             </div>
                             <h4 class="font-semibold text-gray-900 mb-2">Self-Care Ideas</h4>
-                            <p class="text-gray-600 text-sm">Simple and effective self-care activities for daily wellness</p>
+                            <p class="text-gray-600 text-sm">Simple and effective self-care activities for daily
+                                wellness</p>
                         </div>
                     </div>
-                    
+
                     <!-- Professional Resources -->
                     <div class="bg-white rounded-2xl shadow-lg p-6 mb-8">
                         <h3 class="text-xl font-semibold text-gray-900 mb-6">Professional Support</h3>
                         <div class="grid md:grid-cols-2 gap-6">
                             <div class="border border-gray-200 rounded-lg p-4">
                                 <h4 class="font-medium text-gray-900 mb-2">Find a Therapist</h4>
-                                <p class="text-gray-600 text-sm mb-3">Connect with licensed mental health professionals in your area</p>
+                                <p class="text-gray-600 text-sm mb-3">Connect with licensed mental health professionals
+                                    in your area</p>
                                 <div class="space-y-2">
-                                    <a href="#" class="block text-blue-600 hover:text-blue-800 text-sm">Psychology Today</a>
+                                    <a href="#" class="block text-blue-600 hover:text-blue-800 text-sm">Psychology
+                                        Today</a>
                                     <a href="#" class="block text-blue-600 hover:text-blue-800 text-sm">BetterHelp</a>
                                     <a href="#" class="block text-blue-600 hover:text-blue-800 text-sm">Talkspace</a>
                                 </div>
                             </div>
-                            
+
                             <div class="border border-gray-200 rounded-lg p-4">
                                 <h4 class="font-medium text-gray-900 mb-2">Support Groups</h4>
-                                <p class="text-gray-600 text-sm mb-3">Join communities of people with shared experiences</p>
+                                <p class="text-gray-600 text-sm mb-3">Join communities of people with shared experiences
+                                </p>
                                 <div class="space-y-2">
-                                    <a href="#" class="block text-blue-600 hover:text-blue-800 text-sm">NAMI Support Groups</a>
-                                    <a href="#" class="block text-blue-600 hover:text-blue-800 text-sm">Mental Health America</a>
-                                    <a href="#" class="block text-blue-600 hover:text-blue-800 text-sm">Local Community Centers</a>
+                                    <a href="#" class="block text-blue-600 hover:text-blue-800 text-sm">NAMI Support
+                                        Groups</a>
+                                    <a href="#" class="block text-blue-600 hover:text-blue-800 text-sm">Mental Health
+                                        America</a>
+                                    <a href="#" class="block text-blue-600 hover:text-blue-800 text-sm">Local Community
+                                        Centers</a>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    
+
                     <!-- Educational Resources -->
                     <div class="bg-white rounded-2xl shadow-lg p-6">
                         <h3 class="text-xl font-semibold text-gray-900 mb-6">Learn More</h3>
                         <div class="grid md:grid-cols-3 gap-6">
                             <div class="text-center">
-                                <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <div
+                                    class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
                                     <i class="fas fa-brain text-blue-600 text-xl"></i>
                                 </div>
                                 <h4 class="font-medium text-gray-900 mb-2">Understanding Mental Health</h4>
-                                <p class="text-gray-600 text-sm">Learn about common mental health conditions and their symptoms</p>
+                                <p class="text-gray-600 text-sm">Learn about common mental health conditions and their
+                                    symptoms</p>
                             </div>
-                            
+
                             <div class="text-center">
-                                <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <div
+                                    class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
                                     <i class="fas fa-book text-green-600 text-xl"></i>
                                 </div>
                                 <h4 class="font-medium text-gray-900 mb-2">Recommended Reading</h4>
-                                <p class="text-gray-600 text-sm">Books and articles about mental wellness and personal growth</p>
+                                <p class="text-gray-600 text-sm">Books and articles about mental wellness and personal
+                                    growth</p>
                             </div>
-                            
+
                             <div class="text-center">
-                                <div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <div
+                                    class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
                                     <i class="fas fa-podcast text-purple-600 text-xl"></i>
                                 </div>
                                 <h4 class="font-medium text-gray-900 mb-2">Podcasts & Videos</h4>
@@ -644,25 +773,30 @@
             </div>
         </main>
     </div>
-    
+
     <!-- Floating Quick Chat Button -->
-    <button onclick="showPage('chat')" class="floating-button bg-gradient-to-r from-purple-500 to-indigo-600 text-white w-14 h-14 rounded-full shadow-lg hover:shadow-xl transition-all">
+    <button onclick="showPage('chat')"
+        class="floating-button bg-gradient-to-r from-purple-500 to-indigo-600 text-white w-14 h-14 rounded-full shadow-lg hover:shadow-xl transition-all">
         <i class="fas fa-comments text-xl"></i>
     </button>
-    
+
     <!-- Breathing Exercise Modal -->
-    <div id="breathingModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
+    <div id="breathingModal"
+        class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl p-8 max-w-md w-full text-center">
             <h3 class="text-2xl font-bold text-gray-900 mb-4">Breathing Exercise</h3>
-            <div id="breathingCircle" class="w-32 h-32 border-4 border-blue-500 rounded-full mx-auto mb-6 flex items-center justify-center">
+            <div id="breathingCircle"
+                class="w-32 h-32 border-4 border-blue-500 rounded-full mx-auto mb-6 flex items-center justify-center">
                 <span id="breathingText" class="text-lg font-medium text-blue-600">Breathe In</span>
             </div>
             <p id="breathingInstruction" class="text-gray-600 mb-6">Follow the circle and breathe slowly</p>
             <div class="flex gap-4 justify-center">
-                <button onclick="startBreathing()" id="breathingStartBtn" class="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition-colors">
+                <button onclick="startBreathing()" id="breathingStartBtn"
+                    class="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition-colors">
                     Start
                 </button>
-                <button onclick="closeBreathingExercise()" class="border border-gray-300 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-50 transition-colors">
+                <button onclick="closeBreathingExercise()"
+                    class="border border-gray-300 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-50 transition-colors">
                     Close
                 </button>
             </div>
@@ -672,7 +806,8 @@
     <!-- Link to your JavaScript files -->
     <!-- Order matters if main.js depends on api.js globals -->
     <script src="./js/api.js" defer></script>
-    <script src="./js/main.js" defer></script> 
-   
+    <script src="./js/main.js" defer></script>
+
 </body>
+
 </html>
