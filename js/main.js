@@ -45,6 +45,8 @@ let pageTitle,
   moodChartPeriodSelectEl,
   welcomeHeader;
 
+let userCreditsDisplayEl;
+
 function cacheDOMElements() {
   pageTitle = document.getElementById("pageTitle");
   mobileMenuBtn = document.getElementById("mobileMenuBtn");
@@ -84,6 +86,7 @@ function cacheDOMElements() {
   moodStatAvgMoodEl = document.getElementById("moodStatAvgMood");
   moodChartPeriodSelectEl = document.getElementById("moodChartPeriodSelect");
   welcomeHeader = document.querySelector("#home .text-3xl.font-bold");
+  userCreditsDisplayEl = document.getElementById("userCreditsDisplay");
 }
 
 // --- Initialization ---
@@ -98,23 +101,32 @@ async function initializeApp() {
 }
 
 async function checkAuthStatusAndInitializeUI() {
-  currentUser = getLoggedInUser(); // From api.js (gets from localStorage)
+  const localUser = getLoggedInUser(); // Gets from localStorage { _id, username }
+  const token = getToken();
 
-  if (currentUser && getToken()) {
+  if (localUser && token) {
     try {
-      const userFromServer = await getCurrentUserAPI(); // Verifies token with backend
+      const userFromServer = await getCurrentUserAPI(); // Fetches fresh user data including credits
       if (userFromServer) {
-        currentUser = userFromServer;
-        localStorage.setItem("mindmateUser", JSON.stringify(currentUser));
+        currentUser = userFromServer; // Now currentUser = { _id, username, credits, ... }
+        localStorage.setItem(
+          "mindmateUser",
+          JSON.stringify({
+            // Store essential parts, or just rely on currentUser
+            _id: currentUser._id,
+            username: currentUser.username,
+            // credits: currentUser.credits // Optionally store credits locally too for quick display
+          })
+        );
         updateUIAfterLogin();
         showPage("home");
         loadUserSpecificData();
       } else {
-        handleLogout(); // Token might be invalid or user not found by server
+        handleLogout();
       }
     } catch (error) {
       console.error("Auth check failed:", error);
-      handleLogout(); // API call failed (e.g. network, or 401 if token invalid)
+      handleLogout();
     }
   } else {
     updateUIAfterLogout();
@@ -135,6 +147,10 @@ function updateUIAfterLogin() {
     quickMoodGrid.style.opacity = "1";
     quickMoodGrid.style.pointerEvents = "auto";
   }
+  if (userCreditsDisplayEl && currentUser) {
+    userCreditsDisplayEl.textContent = currentUser.credits;
+  }
+
   const journalPageLink = document.querySelector(
     "button[onclick=\"showPage('journal')\"]"
   );
@@ -545,6 +561,16 @@ function showPage(pageId) {
     if (chatHistory.length === 0) {
       chatHistory.push({ sender: "bot", text: initialBotMessage }); // Actual conversation history
     }
+
+    getCurrentUserAPI()
+      .then((updatedUser) => {
+        if (updatedUser && updatedUser.credits !== undefined) {
+          currentUser.credits = updatedUser.credits;
+          if (userCreditsDisplayEl)
+            userCreditsDisplayEl.textContent = currentUser.credits;
+        }
+      })
+      .catch((err) => console.warn("Could not refresh user credits:", err));
   }
   if (pageId === "mood-tracker" && currentUser) {
     loadAndRenderMoodTrackerData();
@@ -582,6 +608,17 @@ async function sendMessage() {
     openAuthModal("login", "Please login to chat.");
     return;
   }
+
+  // Frontend check (optional but good for UX, backend is the source of truth)
+  if (currentUser.credits < 1) {
+    addChatMessage(
+      "You've run out of chat credits! Please check back later or look for ways to earn more.",
+      "bot"
+    );
+    // You could open a modal here explaining about credits
+    return;
+  }
+
   if (!chatInput) return;
   const messageText = chatInput.value.trim();
   if (!messageText) return;
@@ -589,20 +626,54 @@ async function sendMessage() {
   addChatMessage(messageText, "user");
   chatHistory.push({ sender: "user", text: messageText });
   chatInput.value = "";
+  const sendButton = document.getElementById("sendBtn"); // Assuming sendBtn is cached or query here
+  const originalSendBtnHTML = sendButton
+    ? sendButton.innerHTML
+    : '<i class="fas fa-paper-plane"></i>';
+  if (sendButton) {
+    sendButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    sendButton.disabled = true;
+  }
+
   showTypingIndicator();
 
   try {
-    const response = await callChatAPI(messageText, chatHistory.slice(-10));
+    const response = await callChatAPI(messageText, chatHistory.slice(-10)); // from api.js
     hideTypingIndicator();
     addChatMessage(response.reply, "bot");
     chatHistory.push({ sender: "bot", text: response.reply });
+
+    // Successfully sent a message, so update credits on frontend
+    currentUser.credits -= 1; // Decrement locally for immediate UI update
+    if (userCreditsDisplayEl)
+      userCreditsDisplayEl.textContent = currentUser.credits;
   } catch (error) {
     hideTypingIndicator();
-    addChatMessage(
-      "I'm sorry, I'm having trouble connecting right now. Please try again.",
-      "bot"
-    );
     console.error("Error sending message:", error);
+    if (error.status === 403 || error.status === 402) {
+      // Insufficient credits error from backend
+      addChatMessage(
+        error.data?.message ||
+          "You don't have enough credits to send a message.",
+        "bot"
+      );
+      if (error.data?.credits !== undefined) {
+        // Update to actual server credit count
+        currentUser.credits = error.data.credits;
+        if (userCreditsDisplayEl)
+          userCreditsDisplayEl.textContent = currentUser.credits;
+      }
+    } else {
+      addChatMessage(
+        "I'm sorry, I'm having trouble connecting right now. Please try again.",
+        "bot"
+      );
+    }
+  } finally {
+    if (sendButton) {
+      sendButton.innerHTML = originalSendBtnHTML;
+      sendButton.disabled = false;
+    }
   }
 }
 
