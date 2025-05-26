@@ -155,6 +155,7 @@ function loadUserSpecificData() {
 function setupEventListeners() {
   if (mobileMenuBtn) mobileMenuBtn.addEventListener("click", toggleMobileMenu);
   if (mobileOverlay) mobileOverlay.addEventListener("click", closeMobileMenu);
+  const saveJournalBtn = document.getElementById("actualSaveJournalBtn");
 
   if (chatInput)
     chatInput.addEventListener(
@@ -213,15 +214,20 @@ function setupEventListeners() {
       newJournalEntry();
     };
 
-  const saveJournalBtn = document.querySelector(
-    '#journalForm button[onclick="saveJournalEntry()"]'
-  );
-  if (saveJournalBtn)
-    saveJournalBtn.onclick = (e) => {
-      // Override
-      e.preventDefault();
-      saveJournalEntry();
-    };
+  if (saveJournalBtn) {
+    // Remove any inline onclick attribute from the HTML button itself
+    // e.g., <button id="actualSaveJournalBtn" class="...">Save Entry</button>
+    // NOT <button id="actualSaveJournalBtn" onclick="someOldFunction()" ...>
+
+    saveJournalBtn.addEventListener("click", function (event) {
+      event.preventDefault(); // Good practice for buttons in forms
+      console.log("Save Journal Button Clicked via addEventListener"); // NEW DEBUG
+      saveJournalEntry(); // Call your async function
+    });
+  } else {
+    console.error("Save Journal Button (actualSaveJournalBtn) not found!"); // DEBUG
+  }
+
   const cancelJournalBtn = document.querySelector(
     '#journalForm button[onclick="cancelJournalEntry()"]'
   );
@@ -792,37 +798,83 @@ function usePrompt(prompt) {
 }
 
 async function saveJournalEntry() {
-  if (!currentUser || !journalTitleInput || !journalContentInput) return;
+  console.log("Inside saveJournalEntry function"); // This should be the first log you see from this function
 
-  const title = journalTitleInput.value.trim() || "Untitled Entry";
+  if (!currentUser) {
+    console.log("User not current, opening auth modal");
+    openAuthModal("login", "Please login to save a journal entry.");
+    return;
+  }
+  // Ensure journalFormEl is defined and accessible in this scope
+  // It should be defined globally or passed as a parameter if necessary.
+  // Assuming journalFormEl, journalTitleInput, journalContentInput are globally defined (as per previous discussions)
+  if (!journalFormEl || !journalTitleInput || !journalContentInput) {
+    console.error("Journal form or input elements not found");
+    alert("An error occurred. Journal form elements are missing.");
+    return;
+  }
+
+  const title = journalTitleInput.value.trim();
   const content = journalContentInput.value.trim();
+  const editingId = journalFormEl.dataset.editingId;
+
+  console.log("Editing ID:", editingId);
+  console.log("Title:", title);
+  console.log("Content:", content);
 
   if (!content) {
     alert("Please write something before saving.");
     return;
   }
 
-  // Show loading state on button
-  const saveBtn = document.querySelector(
-    '#journalForm button[onclick="saveJournalEntry()"]'
-  ); // More robust selector
-  const originalBtnText = saveBtn ? saveBtn.innerHTML : "Save Entry";
+  const saveBtn = document.getElementById("actualSaveJournalBtn"); // Ensure this ID is on your save button
+  let originalBtnText = "Save Entry"; // Default
   if (saveBtn) {
+    originalBtnText = editingId ? "Update Entry" : "Save Entry"; // Determine correct original text
     saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
     saveBtn.disabled = true;
   }
 
   try {
-    await saveJournalAPI(title, content); // Add associatedMood, entryDate if UI exists
-    alert("Journal entry saved successfully! ✍️");
-    cancelJournalEntry(); // Clears form and hides it
-    loadAndRenderJournalEntries(); // Refresh list
+    let response;
+    if (editingId) {
+      console.log("Attempting to UPDATE journal entry ID:", editingId);
+      response = await updateJournalEntryAPI(editingId, {
+        title: title || "Untitled Entry", // Default title if empty during update
+        content,
+        // associatedMood: ... // If you have UI for this
+      });
+      alert("Journal entry updated successfully! ✍️");
+      if (journalFormEl) journalFormEl.removeAttribute("data-editing-id");
+    } else {
+      console.log("Attempting to SAVE NEW journal entry");
+      response = await saveJournalAPI(
+        title || "Untitled Entry", // Default title if empty for new entry
+        content,
+        new Date().toISOString(), // entryDate for new
+        "" // associatedMood for new (empty string or based on UI)
+      );
+      alert("Journal entry saved successfully! ✍️");
+    }
+    console.log("API Response:", response);
+
+    cancelJournalEntry();
+    loadAndRenderJournalEntries();
   } catch (error) {
-    console.error("Error saving journal entry:", error);
-    alert(`Error saving journal entry: ${error.message}. Please try again.`);
+    console.error("Error in saveJournalEntry API call:", error);
+    if (error.data && error.data.message) {
+      // Check if backend sent a specific message
+      alert(`Error saving journal entry: ${error.data.message}`);
+    } else {
+      alert(
+        `Error saving journal entry: ${
+          error.message || "Unknown error"
+        }. Please check console.`
+      );
+    }
   } finally {
     if (saveBtn) {
-      saveBtn.innerHTML = originalBtnText;
+      saveBtn.innerHTML = originalBtnText; // Restore the correct original text
       saveBtn.disabled = false;
     }
   }
@@ -913,53 +965,6 @@ async function handleEditJournal(event) {
     if (saveBtn) saveBtn.textContent = "Update Entry";
   } catch (error) {
     alert(`Error fetching journal entry for editing: ${error.message}`);
-  }
-}
-// Modify saveJournalEntry to handle updates
-async function saveJournalEntry() {
-  // Already defined, this is a conceptual modification point
-  // ... (existing code to get title, content)
-  const editingId = journalFormEl.dataset.editingId;
-
-  // Show loading state on button
-  const saveBtn = document.querySelector(
-    '#journalForm button[onclick="saveJournalEntry()"]'
-  );
-  const originalBtnText = saveBtn
-    ? saveBtn.innerHTML
-    : editingId
-    ? "Update Entry"
-    : "Save Entry";
-  if (saveBtn) {
-    saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
-    saveBtn.disabled = true;
-  }
-
-  try {
-    if (editingId) {
-      await updateJournalEntryAPI(editingId, {
-        title,
-        content /*, associatedMood */,
-      });
-      alert("Journal entry updated successfully! ✍️");
-      journalFormEl.removeAttribute("data-editing-id"); // Clear editing ID
-      if (saveBtn) saveBtn.textContent = "Save Entry"; // Reset button text
-    } else {
-      await saveJournalAPI(title, content);
-      alert("Journal entry saved successfully! ✍️");
-    }
-    cancelJournalEntry();
-    loadAndRenderJournalEntries();
-  } catch (error) {
-    // ... (existing error handling)
-  } finally {
-    if (saveBtn) {
-      saveBtn.innerHTML = originalBtnText; // Make sure to reset to correct original (Save or Update)
-      if (journalFormEl.dataset.editingId)
-        saveBtn.textContent = "Update Entry"; // Re-set if still editing
-      else saveBtn.textContent = "Save Entry";
-      saveBtn.disabled = false;
-    }
   }
 }
 
