@@ -95,18 +95,18 @@ function getToken() {
 }
 
 // --- Chat Function ---
-async function callChatAPI(message, history = []) {
+async function callChatAPI(message, clientHistory = []) {
   // Ensure history is in the format expected by the backend if it differs from frontend's internal format
   // Backend expects: { message: "user's current message", history: [{role: "user"|"model", parts: [{text: "..."}]}] }
   // Frontend might store history as: [{ sender: "user"|"bot", text: "..."}]
-  const formattedHistory = history.map((h) => ({
-    role: h.sender === "user" ? "user" : "model",
-    parts: [{ text: h.text }],
-  }));
+  // const formattedHistory = history.map((h) => ({
+  //   role: h.sender === "user" ? "user" : "model",
+  //   parts: [{ text: h.text }],
+  // }));
 
   return fetchWithAuth(`${API_BASE_URL}/chat`, {
     method: "POST",
-    body: JSON.stringify({ message, history: formattedHistory }), // Send current message and history
+    body: JSON.stringify({ message, history: clientHistory }), // Send current message and history
   });
 }
 

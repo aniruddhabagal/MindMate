@@ -540,12 +540,10 @@ function showPage(pageId) {
     const initialBotMessage =
       "Hello! I'm MindMate. How are you feeling today? 😊";
     addChatMessage(initialBotMessage, "bot");
-    if (
-      chatHistory.length === 0 ||
-      chatHistory[chatHistory.length - 1]?.text !== initialBotMessage
-    ) {
-      // Avoid duplicate initial message in history
-      chatHistory.push({ sender: "bot", text: initialBotMessage });
+
+    // Only add to history if it's truly empty to avoid duplicates on quick tab switches
+    if (chatHistory.length === 0) {
+      chatHistory.push({ sender: "bot", text: initialBotMessage }); // Actual conversation history
     }
   }
   if (pageId === "mood-tracker" && currentUser) {
