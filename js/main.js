@@ -445,8 +445,19 @@ function showPage(pageId) {
 
   // If navigating to chat, ensure initial bot message if history is empty
   if (pageId === "chat" && currentUser && chatHistory.length === 0) {
-    if (chatMessagesContainer) chatMessagesContainer.innerHTML = ""; // Clear any "login to chat" message
-    addChatMessage("Hello! I'm MindMate. How are you feeling today? 😊", "bot");
+    if (chatMessagesContainer) {
+      // Clear any "login to chat" or other placeholder messages first
+      const placeholder = chatMessagesContainer.querySelector(
+        "p.text-center.text-gray-500"
+      );
+      if (placeholder) {
+        chatMessagesContainer.innerHTML = "";
+      }
+    }
+    const initialBotMessage =
+      "Hello! I'm MindMate. How are you feeling today? 😊";
+    addChatMessage(initialBotMessage, "bot"); // Adds to UI
+    chatHistory.push({ sender: "bot", text: initialBotMessage }); // ADDS TO CONVERSATIONAL HISTORY
   }
 }
 
@@ -483,8 +494,8 @@ async function sendMessage() {
   const messageText = chatInput.value.trim();
   if (!messageText) return;
 
-  addChatMessage(messageText, "user");
-  chatHistory.push({ sender: "user", text: messageText });
+  addChatMessage(messageText, "user"); // Adds to UI
+  chatHistory.push({ sender: "user", text: messageText }); // ADDS TO HISTORY
   chatInput.value = "";
   showTypingIndicator();
 
