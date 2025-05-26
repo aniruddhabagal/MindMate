@@ -368,7 +368,8 @@
                             <div class="flex items-center justify-between">
                                 <div>
                                     <p class="text-gray-600 text-sm">Current Streak</p>
-                                    <p class="text-2xl font-bold text-gray-900">5 days</p>
+                                    <p id="moodStatStreak" class="text-2xl font-bold text-gray-900">0 days</p>
+                                    <!-- ID added -->
                                 </div>
                                 <div class="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
                                     <i class="fas fa-fire text-green-600"></i>
@@ -380,10 +381,11 @@
                             <div class="flex items-center justify-between">
                                 <div>
                                     <p class="text-gray-600 text-sm">This Week</p>
-                                    <p class="text-2xl font-bold text-gray-900">Mostly Happy</p>
+                                    <p id="moodStatThisWeek" class="text-2xl font-bold text-gray-900">N/A</p>
+                                    <!-- ID added -->
                                 </div>
                                 <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
-                                    <i class="fas fa-smile text-blue-600"></i>
+                                    <i class="fas fa-smile text-blue-600"></i> <!-- Icon can be dynamic too -->
                                 </div>
                             </div>
                         </div>
@@ -392,7 +394,8 @@
                             <div class="flex items-center justify-between">
                                 <div>
                                     <p class="text-gray-600 text-sm">Total Entries</p>
-                                    <p class="text-2xl font-bold text-gray-900">47</p>
+                                    <p id="moodStatTotalEntries" class="text-2xl font-bold text-gray-900">0</p>
+                                    <!-- ID added -->
                                 </div>
                                 <div class="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
                                     <i class="fas fa-calendar text-purple-600"></i>
@@ -404,7 +407,8 @@
                             <div class="flex items-center justify-between">
                                 <div>
                                     <p class="text-gray-600 text-sm">Avg. Mood</p>
-                                    <p class="text-2xl font-bold text-gray-900">7.2/10</p>
+                                    <p id="moodStatAvgMood" class="text-2xl font-bold text-gray-900">0/10</p>
+                                    <!-- ID added -->
                                 </div>
                                 <div class="w-12 h-12 bg-yellow-100 rounded-xl flex items-center justify-center">
                                     <i class="fas fa-chart-line text-yellow-600"></i>
@@ -417,10 +421,11 @@
                     <div class="bg-white rounded-2xl shadow-lg p-6 mb-8">
                         <div class="flex items-center justify-between mb-6">
                             <h3 class="text-xl font-semibold text-gray-900">Mood Trends</h3>
-                            <select class="px-4 py-2 border border-gray-300 rounded-lg text-sm">
-                                <option>Last 7 days</option>
-                                <option>Last 30 days</option>
-                                <option>Last 3 months</option>
+                            <select id="moodChartPeriodSelect"
+                                class="px-4 py-2 border border-gray-300 rounded-lg text-sm"> <!-- ID added -->
+                                <option value="7">Last 7 days</option>
+                                <option value="30">Last 30 days</option>
+                                <option value="90">Last 3 months</option>
                             </select>
                         </div>
                         <div class="relative h-64 sm:h-72 md:h-80">
@@ -431,48 +436,9 @@
                     <!-- Recent Mood Entries -->
                     <div class="bg-white rounded-2xl shadow-lg p-6">
                         <h3 class="text-xl font-semibold text-gray-900 mb-6">Recent Entries</h3>
-                        <div class="space-y-4">
-                            <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                                <div class="flex items-center gap-4">
-                                    <span class="text-2xl">😊</span>
-                                    <div>
-                                        <p class="font-medium text-gray-900">Happy</p>
-                                        <p class="text-sm text-gray-600">Today, 2:30 PM</p>
-                                    </div>
-                                </div>
-                                <div class="text-right">
-                                    <p class="text-lg font-semibold text-gray-900">8/10</p>
-                                    <p class="text-xs text-gray-500">Great day at work</p>
-                                </div>
-                            </div>
-
-                            <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                                <div class="flex items-center gap-4">
-                                    <span class="text-2xl">😌</span>
-                                    <div>
-                                        <p class="font-medium text-gray-900">Calm</p>
-                                        <p class="text-sm text-gray-600">Yesterday, 8:15 PM</p>
-                                    </div>
-                                </div>
-                                <div class="text-right">
-                                    <p class="text-lg font-semibold text-gray-900">7/10</p>
-                                    <p class="text-xs text-gray-500">Relaxing evening</p>
-                                </div>
-                            </div>
-
-                            <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                                <div class="flex items-center gap-4">
-                                    <span class="text-2xl">😰</span>
-                                    <div>
-                                        <p class="font-medium text-gray-900">Anxious</p>
-                                        <p class="text-sm text-gray-600">2 days ago, 11:00 AM</p>
-                                    </div>
-                                </div>
-                                <div class="text-right">
-                                    <p class="text-lg font-semibold text-gray-900">4/10</p>
-                                    <p class="text-xs text-gray-500">Work presentation</p>
-                                </div>
-                            </div>
+                        <div id="recentMoodEntriesList" class="space-y-4"> <!-- ID added -->
+                            <!-- Entries will be dynamically inserted here -->
+                            <p class="text-center text-gray-500">Loading mood entries...</p>
                         </div>
                     </div>
                 </div>

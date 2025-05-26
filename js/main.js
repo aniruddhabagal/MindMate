@@ -8,93 +8,117 @@ let breathingInterval = null;
 let moodChartInstance = null; // To hold the chart instance for updates/destruction
 
 // --- DOM Elements (cache frequently used ones) ---
-const pageTitle = document.getElementById("pageTitle");
-const mobileMenuBtn = document.getElementById("mobileMenuBtn");
-const mobileOverlay = document.getElementById("mobileOverlay");
-const sidebar = document.getElementById("sidebar");
-// Auth Modal Elements
-const authModalContainer = document.getElementById("authModalContainer");
-const loginFormContainer = document.getElementById("loginFormContainer");
-const registerFormContainer = document.getElementById("registerFormContainer");
-const loginForm = document.getElementById("loginForm");
-const registerForm = document.getElementById("registerForm");
-const showRegisterBtn = document.getElementById("showRegisterBtn");
-const showLoginBtn = document.getElementById("showLoginBtn");
-const authErrorEl = document.getElementById("authError");
-const closeAuthModalBtnLogin = document.getElementById(
-  "closeAuthModalBtnLogin"
-);
-const closeAuthModalBtnRegister = document.getElementById(
-  "closeAuthModalBtnRegister"
-);
+let pageTitle,
+  mobileMenuBtn,
+  mobileOverlay,
+  sidebar,
+  authModalContainer,
+  loginFormContainer,
+  registerFormContainer,
+  loginForm,
+  registerForm,
+  showRegisterBtn,
+  showLoginBtn,
+  authErrorEl,
+  closeAuthModalBtnLogin,
+  closeAuthModalBtnRegister,
+  userProfileSection,
+  usernameDisplay,
+  logoutBtn,
+  loginPromptSection,
+  openLoginModalBtn,
+  chatMessagesContainer,
+  chatInput,
+  sendBtn,
+  typingIndicator,
+  journalFormEl,
+  journalTitleInput,
+  journalContentInput,
+  journalEntriesContainer,
+  quickMoodGrid,
+  moodChartCanvas,
+  recentMoodEntriesListEl,
+  moodStatStreakEl,
+  moodStatThisWeekEl,
+  moodStatTotalEntriesEl,
+  moodStatAvgMoodEl,
+  moodChartPeriodSelectEl,
+  welcomeHeader;
 
-// User Profile UI
-const userProfileSection = document.getElementById("userProfile");
-const usernameDisplay = document.getElementById("usernameDisplay");
-const logoutBtn = document.getElementById("logoutBtn");
-const loginPromptSection = document.getElementById("loginPrompt");
-const openLoginModalBtn = document.getElementById("openLoginModalBtn");
-
-// Chat elements
-const chatMessagesContainer = document.getElementById("chatMessages");
-const chatInput = document.getElementById("chatInput");
-const sendBtn = document.getElementById("sendBtn");
-const typingIndicator = document.getElementById("typingIndicator");
-
-// Journal elements
-const journalFormEl = document.getElementById("journalForm");
-const journalTitleInput = document.getElementById("journalTitle");
-const journalContentInput = document.getElementById("journalContent");
-const journalEntriesContainer = document.getElementById("journalEntries");
-
-// Mood elements
-const quickMoodGrid = document.getElementById("quickMoodGrid");
-const moodChartCanvas = document.getElementById("moodChart");
-const recentMoodEntriesContainer = document.querySelector(
-  "#mood-tracker .bg-white.rounded-2xl.shadow-lg.p-6 .space-y-4"
-); // More specific selector
-
-// Welcome card
-const welcomeHeader = document.querySelector("#home .text-3xl.font-bold");
+function cacheDOMElements() {
+  pageTitle = document.getElementById("pageTitle");
+  mobileMenuBtn = document.getElementById("mobileMenuBtn");
+  mobileOverlay = document.getElementById("mobileOverlay");
+  sidebar = document.getElementById("sidebar");
+  authModalContainer = document.getElementById("authModalContainer");
+  loginFormContainer = document.getElementById("loginFormContainer");
+  registerFormContainer = document.getElementById("registerFormContainer");
+  loginForm = document.getElementById("loginForm");
+  registerForm = document.getElementById("registerForm");
+  showRegisterBtn = document.getElementById("showRegisterBtn");
+  showLoginBtn = document.getElementById("showLoginBtn");
+  authErrorEl = document.getElementById("authError");
+  closeAuthModalBtnLogin = document.getElementById("closeAuthModalBtnLogin");
+  closeAuthModalBtnRegister = document.getElementById(
+    "closeAuthModalBtnRegister"
+  );
+  userProfileSection = document.getElementById("userProfile");
+  usernameDisplay = document.getElementById("usernameDisplay");
+  logoutBtn = document.getElementById("logoutBtn");
+  loginPromptSection = document.getElementById("loginPrompt");
+  openLoginModalBtn = document.getElementById("openLoginModalBtn");
+  chatMessagesContainer = document.getElementById("chatMessages");
+  chatInput = document.getElementById("chatInput");
+  sendBtn = document.getElementById("sendBtn");
+  typingIndicator = document.getElementById("typingIndicator");
+  journalFormEl = document.getElementById("journalForm");
+  journalTitleInput = document.getElementById("journalTitle");
+  journalContentInput = document.getElementById("journalContent");
+  journalEntriesContainer = document.getElementById("journalEntries");
+  quickMoodGrid = document.getElementById("quickMoodGrid");
+  moodChartCanvas = document.getElementById("moodChart");
+  recentMoodEntriesListEl = document.getElementById("recentMoodEntriesList");
+  moodStatStreakEl = document.getElementById("moodStatStreak");
+  moodStatThisWeekEl = document.getElementById("moodStatThisWeek");
+  moodStatTotalEntriesEl = document.getElementById("moodStatTotalEntries");
+  moodStatAvgMoodEl = document.getElementById("moodStatAvgMood");
+  moodChartPeriodSelectEl = document.getElementById("moodChartPeriodSelect");
+  welcomeHeader = document.querySelector("#home .text-3xl.font-bold");
+}
 
 // --- Initialization ---
 document.addEventListener("DOMContentLoaded", function () {
+  cacheDOMElements(); // Cache elements once DOM is loaded
   initializeApp();
 });
 
 async function initializeApp() {
   setupEventListeners();
   await checkAuthStatusAndInitializeUI();
-  // showPage("home"); // showPage is called within checkAuthStatus or if no auth needed
-  // updateActiveNav("home"); // updateActiveNav is called by showPage
 }
 
 async function checkAuthStatusAndInitializeUI() {
-  currentUser = getLoggedInUser(); // From api.js
+  currentUser = getLoggedInUser(); // From api.js (gets from localStorage)
 
   if (currentUser && getToken()) {
-    // Optionally verify token with backend
     try {
-      const userFromServer = await getCurrentUserAPI(); // Verifies token
+      const userFromServer = await getCurrentUserAPI(); // Verifies token with backend
       if (userFromServer) {
-        currentUser = userFromServer; // Use fresh data
-        localStorage.setItem("mindmateUser", JSON.stringify(currentUser)); // Update local user
+        currentUser = userFromServer;
+        localStorage.setItem("mindmateUser", JSON.stringify(currentUser));
         updateUIAfterLogin();
-        showPage("home"); // Or last visited page
-        loadUserSpecificData(); // Fetch moods, journals
+        showPage("home");
+        loadUserSpecificData();
       } else {
-        // Token was invalid or user not found by server
-        handleLogout(); // Clears local storage and UI
+        handleLogout(); // Token might be invalid or user not found by server
       }
     } catch (error) {
-      // API call failed (e.g. network, or 401 if token invalid)
       console.error("Auth check failed:", error);
-      handleLogout();
+      handleLogout(); // API call failed (e.g. network, or 401 if token invalid)
     }
   } else {
     updateUIAfterLogout();
-    showPage("home"); // Show home, but it might prompt for login
-    // Optionally, show login modal automatically: openAuthModal('login');
+    showPage("home");
   }
 }
 
@@ -107,47 +131,76 @@ function updateUIAfterLogin() {
   if (welcomeHeader && currentUser)
     welcomeHeader.textContent = `Hello, ${currentUser.username}! 👋`;
 
-  // Enable features that require login
-  if (quickMoodGrid) quickMoodGrid.style.opacity = "1";
-  if (document.getElementById("journal"))
-    document.getElementById("journal").style.opacity = "1";
-  // etc. for other elements
+  if (quickMoodGrid) {
+    quickMoodGrid.style.opacity = "1";
+    quickMoodGrid.style.pointerEvents = "auto";
+  }
+  const journalPageLink = document.querySelector(
+    "button[onclick=\"showPage('journal')\"]"
+  );
+  if (journalPageLink) {
+    journalPageLink.style.opacity = "1";
+    journalPageLink.style.pointerEvents = "auto";
+  }
+
+  // Ensure main app area is visible
+  const mainContentArea = document.querySelector(".md\\:ml-64");
+  if (mainContentArea)
+    mainContentArea.classList.remove("blur-sm", "pointer-events-none");
 }
 
 function updateUIAfterLogout() {
   if (userProfileSection) userProfileSection.classList.add("hidden");
   if (usernameDisplay) usernameDisplay.textContent = "";
   if (loginPromptSection) loginPromptSection.classList.remove("hidden");
-  if (welcomeHeader) welcomeHeader.textContent = `Hello, Guest! 👋`; // Or general greeting
+  if (welcomeHeader) welcomeHeader.textContent = `Hello, Guest! 👋`;
 
-  // Clear dynamic data areas
   if (chatMessagesContainer)
     chatMessagesContainer.innerHTML =
-      '<p class="text-center text-gray-500">Login to start chatting.</p>'; // Clear chat
-  if (moodChartInstance) moodChartInstance.destroy(); // Clear chart
-  if (recentMoodEntriesContainer)
-    recentMoodEntriesContainer.innerHTML =
-      '<p class="text-center text-gray-500">Login to see your mood history.</p>';
+      '<p class="text-center text-gray-500 py-8">Login to start chatting.</p>';
+  if (moodChartInstance) {
+    moodChartInstance.destroy();
+    moodChartInstance = null;
+  }
+  if (recentMoodEntriesListEl)
+    recentMoodEntriesListEl.innerHTML =
+      '<p class="text-center text-gray-500 py-4">Login to see your mood history.</p>';
   if (journalEntriesContainer)
     journalEntriesContainer.innerHTML =
-      '<p class="text-center text-gray-500">Login to see your journal entries.</p>';
-  chatHistory = []; // Reset chat history
+      '<p class="text-center text-gray-500 py-4">Login to see your journal entries.</p>';
+  if (moodStatStreakEl) moodStatStreakEl.textContent = "0 days";
+  if (moodStatThisWeekEl) moodStatThisWeekEl.textContent = "N/A";
+  if (moodStatTotalEntriesEl) moodStatTotalEntriesEl.textContent = "0";
+  if (moodStatAvgMoodEl) moodStatAvgMoodEl.textContent = "0/10";
 
-  // Disable features requiring login, or show prompts
-  // e.g. quickMoodGrid.style.pointerEvents = "none"; quickMoodGrid.style.opacity = "0.5";
+  chatHistory = [];
+
+  if (quickMoodGrid) {
+    quickMoodGrid.style.opacity = "0.5";
+    quickMoodGrid.style.pointerEvents = "none";
+  }
+  const journalPageLink = document.querySelector(
+    "button[onclick=\"showPage('journal')\"]"
+  );
+  if (journalPageLink) {
+    journalPageLink.style.opacity = "0.5";
+    journalPageLink.style.pointerEvents = "none";
+  }
+
+  // Blur main content if auth modal is to be shown, or simply ensure it's not blurred if not.
+  // This might be better handled when openAuthModal is called.
 }
 
 function loadUserSpecificData() {
   if (!currentUser) return;
-  // Load initial data for dashboard, mood tracker, journal
-  loadAndRenderMoodEntries();
-  loadAndRenderMoodChart();
+  loadAndRenderMoodTrackerData();
   loadAndRenderJournalEntries();
-  // Reset chat history for new session or load from a persistent store if implemented
   chatHistory = [];
-  // Add initial bot message if chat page is active
-  if (document.getElementById("chat").classList.contains("active")) {
-    addChatMessage("Hello! I'm MindMate. How are you feeling today? 😊", "bot");
+  if (document.getElementById("chat")?.classList.contains("active")) {
+    const initialBotMessage =
+      "Hello! I'm MindMate. How are you feeling today? 😊";
+    addChatMessage(initialBotMessage, "bot");
+    chatHistory.push({ sender: "bot", text: initialBotMessage });
   }
 }
 
@@ -155,7 +208,6 @@ function loadUserSpecificData() {
 function setupEventListeners() {
   if (mobileMenuBtn) mobileMenuBtn.addEventListener("click", toggleMobileMenu);
   if (mobileOverlay) mobileOverlay.addEventListener("click", closeMobileMenu);
-  const saveJournalBtn = document.getElementById("actualSaveJournalBtn");
 
   if (chatInput)
     chatInput.addEventListener(
@@ -176,7 +228,6 @@ function setupEventListeners() {
     });
   });
 
-  // Auth Modal Listeners
   if (openLoginModalBtn)
     openLoginModalBtn.addEventListener("click", () => openAuthModal("login"));
   if (showRegisterBtn)
@@ -190,7 +241,6 @@ function setupEventListeners() {
   });
   if (authModalContainer) {
     authModalContainer.addEventListener("click", (e) => {
-      // Close on overlay click
       if (e.target === authModalContainer) closeAuthModal();
     });
   }
@@ -199,13 +249,11 @@ function setupEventListeners() {
   if (registerForm) registerForm.addEventListener("submit", handleRegister);
   if (logoutBtn) logoutBtn.addEventListener("click", handleLogout);
 
-  // Journal Form (assuming it's already in HTML, might need adjustment if dynamically added)
-  const newJournalEntryBtn = document.querySelector(
+  const newJournalEntryBtnHTML = document.querySelector(
     'button[onclick="newJournalEntry()"]'
   );
-  if (newJournalEntryBtn)
-    newJournalEntryBtn.onclick = (e) => {
-      // Override existing onclick
+  if (newJournalEntryBtnHTML)
+    newJournalEntryBtnHTML.onclick = (e) => {
       e.preventDefault();
       if (!currentUser) {
         openAuthModal("login", "Please login to create a journal entry.");
@@ -214,26 +262,20 @@ function setupEventListeners() {
       newJournalEntry();
     };
 
-  if (saveJournalBtn) {
-    // Remove any inline onclick attribute from the HTML button itself
-    // e.g., <button id="actualSaveJournalBtn" class="...">Save Entry</button>
-    // NOT <button id="actualSaveJournalBtn" onclick="someOldFunction()" ...>
-
-    saveJournalBtn.addEventListener("click", function (event) {
-      event.preventDefault(); // Good practice for buttons in forms
-      console.log("Save Journal Button Clicked via addEventListener"); // NEW DEBUG
-      saveJournalEntry(); // Call your async function
+  // Use ID for save journal button
+  const actualSaveJournalBtn = document.getElementById("actualSaveJournalBtn");
+  if (actualSaveJournalBtn) {
+    actualSaveJournalBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      saveJournalEntry();
     });
-  } else {
-    console.error("Save Journal Button (actualSaveJournalBtn) not found!"); // DEBUG
   }
 
-  const cancelJournalBtn = document.querySelector(
+  const cancelJournalBtnHTML = document.querySelector(
     '#journalForm button[onclick="cancelJournalEntry()"]'
   );
-  if (cancelJournalBtn)
-    cancelJournalBtn.onclick = (e) => {
-      // Override
+  if (cancelJournalBtnHTML)
+    cancelJournalBtnHTML.onclick = (e) => {
       e.preventDefault();
       cancelJournalEntry();
     };
@@ -242,9 +284,11 @@ function setupEventListeners() {
     .querySelectorAll('#journalPrompts div[onclick^="usePrompt"]')
     .forEach((promptDiv) => {
       const originalOnclick = promptDiv.getAttribute("onclick");
-      const promptText = originalOnclick.match(/usePrompt\('(.*)'\)/)[1];
+      if (!originalOnclick) return;
+      const match = originalOnclick.match(/usePrompt\('(.*)'\)/);
+      if (!match || !match[1]) return;
+      const promptText = match[1];
       promptDiv.onclick = (e) => {
-        // Override
         e.preventDefault();
         if (!currentUser) {
           openAuthModal("login", "Please login to use journal prompts.");
@@ -254,26 +298,24 @@ function setupEventListeners() {
       };
     });
 
-  // Quick actions on home page
   document.querySelectorAll(".quick-action-card").forEach((card) => {
-    // Add class 'quick-action-card' to those divs
     card.addEventListener("click", function () {
-      if (
-        !currentUser &&
-        (this.dataset.action === "chat" || this.dataset.action === "journal")
-      ) {
-        openAuthModal("login", `Please login to use ${this.dataset.action}.`);
-        return; // Stop further execution if not logged in and action requires it
+      const action = this.dataset.action; // Add data-action="chat", data-action="journal", data-action="breathing" to HTML
+      if (!currentUser && (action === "chat" || action === "journal")) {
+        openAuthModal(
+          "login",
+          `Please login to ${
+            action === "chat" ? "start chatting" : "create a journal entry"
+          }.`
+        );
+        return;
       }
-      // Original onclicks from HTML for breathing exercise are fine,
-      // but for chat/journal, showPage will handle it after auth check.
-      if (this.dataset.action === "chat") showPage("chat");
-      else if (this.dataset.action === "journal") showPage("journal");
-      // Breathing exercise is handled by its own HTML onclick for now
+      if (action === "chat") showPage("chat");
+      else if (action === "journal") showPage("journal");
+      else if (action === "breathing") openBreathingExercise(); // Assuming this doesn't need auth
     });
   });
 
-  // Floating chat button
   const floatingChatBtn = document.querySelector(".floating-button");
   if (floatingChatBtn)
     floatingChatBtn.onclick = (e) => {
@@ -285,18 +327,35 @@ function setupEventListeners() {
       showPage("chat");
     };
 
-  // Keyboard shortcuts (Escape to close auth modal too)
+  if (moodChartPeriodSelectEl) {
+    moodChartPeriodSelectEl.addEventListener("change", (event) => {
+      if (currentUser) {
+        const selectedDays = parseInt(event.target.value);
+        loadAndRenderMoodChart(selectedDays);
+      }
+    });
+  }
+
   document.addEventListener("keydown", function (e) {
     if ((e.ctrlKey || e.metaKey) && e.key >= "1" && e.key <= "5") {
-      // ... (existing code)
+      e.preventDefault();
+      const pages = ["home", "chat", "mood-tracker", "journal", "resources"];
+      const pageIndex = parseInt(e.key) - 1;
+      if (pages[pageIndex]) {
+        showPage(pages[pageIndex]);
+      }
     }
     if (e.key === "Escape") {
-      // ... (existing code)
+      closeBreathingExercise();
+      closeMobileMenu();
       if (
         authModalContainer &&
         !authModalContainer.classList.contains("hidden")
       ) {
         closeAuthModal();
+      }
+      if (journalFormEl && !journalFormEl.classList.contains("hidden")) {
+        cancelJournalEntry();
       }
     }
   });
@@ -305,7 +364,12 @@ function setupEventListeners() {
 // --- Auth Modal Functions ---
 function openAuthModal(type = "login", message = "") {
   if (!authModalContainer) return;
+  const mainContentArea = document.querySelector(".md\\:ml-64"); // Main content area selector
+
   authModalContainer.classList.remove("hidden");
+  if (mainContentArea)
+    mainContentArea.classList.add("blur-sm", "pointer-events-none"); // Blur background
+
   if (authErrorEl) {
     authErrorEl.textContent = message;
     authErrorEl.classList.toggle("hidden", !message);
@@ -322,7 +386,13 @@ function openAuthModal(type = "login", message = "") {
 }
 
 function closeAuthModal() {
-  if (authModalContainer) authModalContainer.classList.add("hidden");
+  if (!authModalContainer) return;
+  const mainContentArea = document.querySelector(".md\\:ml-64");
+
+  authModalContainer.classList.add("hidden");
+  if (mainContentArea)
+    mainContentArea.classList.remove("blur-sm", "pointer-events-none"); // Unblur background
+
   if (authErrorEl) authErrorEl.classList.add("hidden");
 }
 
@@ -339,10 +409,15 @@ async function handleLogin(event) {
     authErrorEl.classList.remove("hidden");
     return;
   }
+  const loginButton = loginForm.querySelector('button[type="submit"]');
+  const originalButtonText = loginButton.innerHTML;
+  loginButton.innerHTML =
+    '<i class="fas fa-spinner fa-spin"></i> Logging in...';
+  loginButton.disabled = true;
 
   try {
-    const data = await loginAPI(username, password); // api.js
-    currentUser = { _id: data._id, username: data.username }; // Store user data
+    const data = await loginAPI(username, password);
+    currentUser = { _id: data._id, username: data.username };
     updateUIAfterLogin();
     closeAuthModal();
     showPage("home");
@@ -352,6 +427,9 @@ async function handleLogin(event) {
       error.message || "Login failed. Please try again.";
     authErrorEl.classList.remove("hidden");
     console.error("Login failed:", error);
+  } finally {
+    loginButton.innerHTML = originalButtonText;
+    loginButton.disabled = false;
   }
 }
 
@@ -364,27 +442,25 @@ async function handleRegister(event) {
   const confirmPassword = registerForm.confirmPassword.value.trim();
 
   if (!username || !password || !confirmPassword) {
-    authErrorEl.textContent = "All fields are required.";
-    authErrorEl.classList.remove("hidden");
-    return;
+    /* ... */ return;
   }
   if (password !== confirmPassword) {
-    authErrorEl.textContent = "Passwords do not match.";
-    authErrorEl.classList.remove("hidden");
-    return;
+    /* ... */ return;
   }
-  // Basic password strength (example)
   if (password.length < 6) {
-    authErrorEl.textContent = "Password must be at least 6 characters.";
-    authErrorEl.classList.remove("hidden");
-    return;
+    /* ... */ return;
   }
 
+  const registerButton = registerForm.querySelector('button[type="submit"]');
+  const originalButtonText = registerButton.innerHTML;
+  registerButton.innerHTML =
+    '<i class="fas fa-spinner fa-spin"></i> Registering...';
+  registerButton.disabled = true;
+
   try {
-    const data = await registerAPI(username, password); // api.js
-    // Automatically log in the user after registration
+    const data = await registerAPI(username, password);
     currentUser = { _id: data._id, username: data.username };
-    localStorage.setItem("mindmateToken", data.token); // Store token from registration
+    localStorage.setItem("mindmateToken", data.token);
     localStorage.setItem("mindmateUser", JSON.stringify(currentUser));
     updateUIAfterLogin();
     closeAuthModal();
@@ -395,35 +471,34 @@ async function handleRegister(event) {
       error.message || "Registration failed. Please try again.";
     authErrorEl.classList.remove("hidden");
     console.error("Registration failed:", error);
+  } finally {
+    registerButton.innerHTML = originalButtonText;
+    registerButton.disabled = false;
   }
 }
 
 async function handleLogout() {
-  await logoutAPI(); // api.js
+  await logoutAPI();
   currentUser = null;
   updateUIAfterLogout();
-  showPage("home"); // Or a dedicated logged-out home page/login page
+  showPage("home");
 }
 
-// --- Navigation Functions (largely unchanged, but consider auth impact) ---
+// --- Navigation Functions ---
 function showPage(pageId) {
-  // If trying to access a protected page without being logged in, redirect or show login
-  const protectedPages = ["chat", "mood-tracker", "journal"]; // Add 'resources' if it becomes protected
+  const protectedPages = ["chat", "mood-tracker", "journal"];
   if (protectedPages.includes(pageId) && !currentUser) {
     openAuthModal(
       "login",
       `Please login to access the ${pageId.replace("-", " ")} page.`
     );
-    // Don't switch to the page, keep current page or go to home
-    // If current page is already a protected one, switch to home.
     if (protectedPages.includes(currentPage)) {
       document.getElementById(currentPage)?.classList.remove("active");
       document.getElementById("home").classList.add("active");
       pageId = "home"; // for title and nav update
-      currentPage = "home";
+      currentPage = "home"; // update internal state
     } else {
-      // Stay on current page, modal is shown
-      return;
+      return; // Stay on current page, modal is shown
     }
   }
 
@@ -436,63 +511,76 @@ function showPage(pageId) {
     targetPage.classList.add("active");
   } else {
     console.error(`Page with id "${pageId}" not found.`);
-    document.getElementById("home").classList.add("active"); // Fallback
+    document.getElementById("home")?.classList.add("active");
     pageId = "home";
   }
 
   const titles = {
-    /* ... same as before ... */
+    home: currentUser
+      ? `Welcome, ${currentUser.username}!`
+      : "Welcome to MindMate!",
+    chat: "Chat with MindMate",
+    "mood-tracker": "Mood Tracker",
+    journal: "Your Journal",
+    resources: "Wellness Resources",
   };
   if (pageTitle) pageTitle.textContent = titles[pageId] || "MindMate";
 
   updateActiveNav(pageId);
   closeMobileMenu();
+  const oldCurrentPage = currentPage;
   currentPage = pageId;
 
-  // If navigating to chat, ensure initial bot message if history is empty
-  if (pageId === "chat" && currentUser && chatHistory.length === 0) {
-    if (chatMessagesContainer) {
-      // Clear any "login to chat" or other placeholder messages first
-      const placeholder = chatMessagesContainer.querySelector(
-        "p.text-center.text-gray-500"
-      );
-      if (placeholder) {
-        chatMessagesContainer.innerHTML = "";
-      }
-    }
+  if (
+    pageId === "chat" &&
+    currentUser &&
+    (chatHistory.length === 0 || oldCurrentPage !== "chat")
+  ) {
+    if (chatMessagesContainer) chatMessagesContainer.innerHTML = "";
     const initialBotMessage =
       "Hello! I'm MindMate. How are you feeling today? 😊";
-    addChatMessage(initialBotMessage, "bot"); // Adds to UI
-    chatHistory.push({ sender: "bot", text: initialBotMessage }); // ADDS TO CONVERSATIONAL HISTORY
+    addChatMessage(initialBotMessage, "bot");
+    if (
+      chatHistory.length === 0 ||
+      chatHistory[chatHistory.length - 1]?.text !== initialBotMessage
+    ) {
+      // Avoid duplicate initial message in history
+      chatHistory.push({ sender: "bot", text: initialBotMessage });
+    }
+  }
+  if (pageId === "mood-tracker" && currentUser) {
+    loadAndRenderMoodTrackerData();
+  }
+  if (pageId === "journal" && currentUser) {
+    loadAndRenderJournalEntries();
   }
 }
 
-// updateActiveNav, toggleMobileMenu, closeMobileMenu (mostly same)
 function updateActiveNav(pageId) {
   document.querySelectorAll(".nav-btn").forEach((btn) => {
     btn.classList.remove("bg-purple-100", "text-purple-700");
   });
-
   const navButtons = document.querySelectorAll(".nav-btn");
   const pageOrder = ["home", "chat", "mood-tracker", "journal", "resources"];
   const pageIndex = pageOrder.indexOf(pageId);
-
   if (pageIndex !== -1 && navButtons[pageIndex]) {
     navButtons[pageIndex].classList.add("bg-purple-100", "text-purple-700");
   }
 }
 
 function toggleMobileMenu() {
-  /* ... same ... */
+  if (sidebar) sidebar.classList.toggle("open");
+  if (mobileOverlay) mobileOverlay.classList.toggle("hidden");
 }
+
 function closeMobileMenu() {
-  /* ... same ... */
+  if (sidebar) sidebar.classList.remove("open");
+  if (mobileOverlay) mobileOverlay.classList.add("hidden");
 }
 
 // --- Chat Functions ---
 async function sendMessage() {
   if (!currentUser) {
-    addChatMessage("Please login to chat with MindMate.", "bot"); // Or open login modal
     openAuthModal("login", "Please login to chat.");
     return;
   }
@@ -500,18 +588,16 @@ async function sendMessage() {
   const messageText = chatInput.value.trim();
   if (!messageText) return;
 
-  addChatMessage(messageText, "user"); // Adds to UI
-  chatHistory.push({ sender: "user", text: messageText }); // ADDS TO HISTORY
+  addChatMessage(messageText, "user");
+  chatHistory.push({ sender: "user", text: messageText });
   chatInput.value = "";
   showTypingIndicator();
 
   try {
-    const response = await callChatAPI(messageText, chatHistory.slice(-10)); // Send current message and last 10 history items for context
+    const response = await callChatAPI(messageText, chatHistory.slice(-10));
     hideTypingIndicator();
-    addChatMessage(response.reply, "bot"); // Assuming backend returns { reply: "..." }
+    addChatMessage(response.reply, "bot");
     chatHistory.push({ sender: "bot", text: response.reply });
-
-    // if (response.suggestMoodLog) { ... } // You can handle this if backend provides it
   } catch (error) {
     hideTypingIndicator();
     addChatMessage(
@@ -534,54 +620,49 @@ function quickResponse(messageText) {
 }
 
 function addChatMessage(message, sender) {
-  // Mostly same, ensure chatMessagesContainer is defined
   if (!chatMessagesContainer) return;
-  // ... (rest of the function is the same, ensure you clear any "login to chat" message first if it exists)
-  // If the first message is being added (or container was cleared), clear placeholder text.
-  if (chatMessagesContainer.querySelector("p.text-center.text-gray-500")) {
-    chatMessagesContainer.innerHTML = "";
-  }
-  // ... (the existing HTML creation for messageDiv)
+  const placeholder = chatMessagesContainer.querySelector(
+    "p.text-center.text-gray-500"
+  );
+  if (placeholder) placeholder.remove();
+
   const messageDiv = document.createElement("div");
   messageDiv.classList.add("flex", "gap-3", "mb-4");
-
   if (sender === "user") {
     messageDiv.classList.add("justify-end");
     messageDiv.innerHTML = `
-                <div class="chat-bubble-user text-white p-3 px-4 max-w-md">
-                    <p class="text-sm">${message}</p>
-                </div>
-                <div class="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center flex-shrink-0">
-                    <i class="fas fa-user text-gray-600 text-xs"></i>
-                </div>
-            `;
+            <div class="chat-bubble-user text-white p-3 px-4 max-w-md">
+                <p class="text-sm">${message}</p>
+            </div>
+            <div class="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center flex-shrink-0">
+                <i class="fas fa-user text-gray-600 text-xs"></i>
+            </div>`;
   } else {
-    // bot
     messageDiv.innerHTML = `
-                <div class="w-8 h-8 bg-gradient-to-r from-purple-500 to-indigo-600 rounded-full flex items-center justify-center flex-shrink-0">
-                    <i class="fas fa-robot text-white text-xs"></i>
-                </div>
-                <div class="chat-bubble-bot p-3 px-4 max-w-md">
-                    <p class="text-gray-800 text-sm">${message}</p>
-                </div>
-            `;
+            <div class="w-8 h-8 bg-gradient-to-r from-purple-500 to-indigo-600 rounded-full flex items-center justify-center flex-shrink-0">
+                <i class="fas fa-robot text-white text-xs"></i>
+            </div>
+            <div class="chat-bubble-bot p-3 px-4 max-w-md">
+                <p class="text-gray-800 text-sm">${message}</p>
+            </div>`;
   }
   chatMessagesContainer.appendChild(messageDiv);
   chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
 }
 
 function showTypingIndicator() {
-  /* ... same ... */
+  if (typingIndicator) typingIndicator.classList.remove("hidden");
+  if (chatMessagesContainer)
+    chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
 }
 function hideTypingIndicator() {
-  /* ... same ... */
+  if (typingIndicator) typingIndicator.classList.add("hidden");
 }
 
 // --- Mood Functions ---
 async function selectMood(mood, score, element) {
-  // score is now passed in
   if (!currentUser) {
-    alert("Please login to log your mood."); // Should ideally be a nicer modal
+    openAuthModal("login", "Please login to log your mood.");
     return;
   }
   document.querySelectorAll(".mood-card").forEach((card) => {
@@ -604,7 +685,7 @@ async function selectMood(mood, score, element) {
   }
 
   try {
-    await logMoodAPI(mood, score); // from api.js. Add notes/entryDate if you have UI for them.
+    await logMoodAPI(mood, score);
     if (element) {
       const originalText = element.querySelector("p").textContent;
       element.querySelector("p").textContent = "Logged! 🎉";
@@ -619,16 +700,13 @@ async function selectMood(mood, score, element) {
         element.querySelector("p").textContent = originalText;
       }, 1500);
     } else {
-      alert("Mood logged!"); // Fallback if element not provided
+      alert("Mood logged!");
     }
-    // Refresh mood data dependent UIs
-    loadAndRenderMoodEntries();
-    loadAndRenderMoodChart();
+    loadAndRenderMoodTrackerData();
   } catch (error) {
     console.error("Error logging mood:", error);
     alert(`Could not log mood: ${error.message}. Please try again.`);
     if (element) {
-      // Revert UI selection on error
       setTimeout(() => {
         element.classList.remove(
           "selected",
@@ -642,104 +720,222 @@ async function selectMood(mood, score, element) {
   }
 }
 
-async function loadAndRenderMoodEntries() {
-  if (!currentUser || !recentMoodEntriesContainer) return;
+async function loadAndRenderMoodTrackerData() {
+  if (!moodStatStreakEl) {
+    console.warn("Mood tracker stat elements not found");
+    return;
+  } // Guard clause
+
+  if (!currentUser) {
+    moodStatStreakEl.textContent = "0 days";
+    if (moodStatThisWeekEl) moodStatThisWeekEl.textContent = "N/A";
+    if (moodStatTotalEntriesEl) moodStatTotalEntriesEl.textContent = "0";
+    if (moodStatAvgMoodEl) moodStatAvgMoodEl.textContent = "0/10";
+    if (recentMoodEntriesListEl)
+      recentMoodEntriesListEl.innerHTML =
+        '<p class="text-center text-gray-500 py-4">Login to see your mood history.</p>';
+    loadAndRenderMoodChart();
+    return;
+  }
+
   try {
-    const entries = await getMoodEntriesAPI();
-    recentMoodEntriesContainer.innerHTML = ""; // Clear old entries
-    if (entries.length === 0) {
-      recentMoodEntriesContainer.innerHTML =
-        '<p class="text-center text-gray-500">No mood entries yet. Log your mood to see it here!</p>';
+    const allMoodEntries = await getMoodEntriesAPI();
+    if (!allMoodEntries || allMoodEntries.length === 0) {
+      moodStatStreakEl.textContent = "0 days";
+      if (moodStatThisWeekEl) moodStatThisWeekEl.textContent = "N/A";
+      if (moodStatTotalEntriesEl) moodStatTotalEntriesEl.textContent = "0";
+      if (moodStatAvgMoodEl) moodStatAvgMoodEl.textContent = "0/10";
+      if (recentMoodEntriesListEl)
+        recentMoodEntriesListEl.innerHTML =
+          '<p class="text-center text-gray-500 py-4">No mood entries yet. Log your mood!</p>';
+      loadAndRenderMoodChart();
       return;
     }
-    // Take last 3 for "Recent Entries"
-    entries.slice(0, 3).forEach((entry) => {
-      const moodEmoji = {
-        happy: "😊",
-        sad: "😢",
-        anxious: "😰",
-        calm: "😌",
-        stressed: "😵",
-      };
-      const entryDiv = document.createElement("div");
-      entryDiv.className =
-        "flex items-center justify-between p-4 bg-gray-50 rounded-lg";
-      entryDiv.innerHTML = `
-                <div class="flex items-center gap-4">
-                    <span class="text-2xl">${
-                      moodEmoji[entry.mood.toLowerCase()] || "😐"
-                    }</span>
-                    <div>
-                        <p class="font-medium text-gray-900 capitalize">${
-                          entry.mood
-                        }</p>
-                        <p class="text-sm text-gray-600">${formatDate(
-                          entry.entryDate
-                        )}</p>
-                    </div>
-                </div>
-                <div class="text-right">
-                    <p class="text-lg font-semibold text-gray-900">${
-                      entry.score
-                    }/10</p>
-                    ${
-                      entry.notes
-                        ? `<p class="text-xs text-gray-500 truncate w-24" title="${entry.notes}">${entry.notes}</p>`
-                        : ""
-                    }
-                </div>
-            `;
-      recentMoodEntriesContainer.appendChild(entryDiv);
-    });
+
+    const totalEntries = allMoodEntries.length;
+    if (moodStatTotalEntriesEl)
+      moodStatTotalEntriesEl.textContent = totalEntries;
+
+    const sumOfScores = allMoodEntries.reduce(
+      (sum, entry) => sum + entry.score,
+      0
+    );
+    const avgMood =
+      totalEntries > 0 ? (sumOfScores / totalEntries).toFixed(1) : 0;
+    if (moodStatAvgMoodEl) moodStatAvgMoodEl.textContent = `${avgMood}/10`;
+
+    const sortedEntries = [...allMoodEntries].sort(
+      (a, b) => new Date(b.entryDate) - new Date(a.entryDate)
+    );
+    let currentStreak = 0;
+    if (sortedEntries.length > 0) {
+      let todayForStreak = new Date();
+      todayForStreak.setHours(0, 0, 0, 0);
+      let expectedDate = new Date(todayForStreak);
+      const firstEntryDate = new Date(sortedEntries[0].entryDate);
+      firstEntryDate.setHours(0, 0, 0, 0);
+
+      if (
+        firstEntryDate.getTime() === todayForStreak.getTime() ||
+        firstEntryDate.getTime() ===
+          new Date(new Date().setDate(new Date().getDate() - 1)).setHours(
+            0,
+            0,
+            0,
+            0
+          )
+      ) {
+        currentStreak = 1;
+        expectedDate = new Date(firstEntryDate);
+        expectedDate.setDate(expectedDate.getDate() - 1);
+        for (let i = 1; i < sortedEntries.length; i++) {
+          const entryDate = new Date(sortedEntries[i].entryDate);
+          entryDate.setHours(0, 0, 0, 0);
+          if (entryDate.getTime() === expectedDate.getTime()) {
+            currentStreak++;
+            expectedDate.setDate(expectedDate.getDate() - 1);
+          } else if (entryDate.getTime() < expectedDate.getTime()) {
+            break;
+          }
+        }
+      }
+    }
+    if (moodStatStreakEl)
+      moodStatStreakEl.textContent = `${currentStreak} days`;
+
+    const oneWeekAgo = new Date();
+    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+    oneWeekAgo.setHours(0, 0, 0, 0);
+    const thisWeekEntries = allMoodEntries.filter(
+      (entry) => new Date(entry.entryDate) >= oneWeekAgo
+    );
+    let dominantMoodThisWeek = "N/A";
+    if (thisWeekEntries.length > 0) {
+      const moodCounts = thisWeekEntries.reduce((acc, entry) => {
+        acc[entry.mood] = (acc[entry.mood] || 0) + 1;
+        return acc;
+      }, {});
+      dominantMoodThisWeek = Object.keys(moodCounts).reduce((a, b) =>
+        moodCounts[a] > moodCounts[b] ? a : b
+      );
+      dominantMoodThisWeek =
+        dominantMoodThisWeek.charAt(0).toUpperCase() +
+        dominantMoodThisWeek.slice(1);
+    }
+    if (moodStatThisWeekEl)
+      moodStatThisWeekEl.textContent = dominantMoodThisWeek;
+
+    if (recentMoodEntriesListEl) {
+      recentMoodEntriesListEl.innerHTML = "";
+      const entriesToDisplay = sortedEntries.slice(0, 3);
+      if (entriesToDisplay.length === 0) {
+        recentMoodEntriesListEl.innerHTML =
+          '<p class="text-center text-gray-500 py-4">No recent entries to display.</p>';
+      } else {
+        entriesToDisplay.forEach((entry) => {
+          const moodEmoji = {
+            happy: "😊",
+            sad: "😢",
+            anxious: "😰",
+            calm: "😌",
+            stressed: "😵",
+          };
+          const entryDiv = document.createElement("div");
+          entryDiv.className =
+            "flex items-center justify-between p-4 bg-gray-50 rounded-lg";
+          entryDiv.innerHTML = `
+                        <div class="flex items-center gap-4">
+                            <span class="text-2xl">${
+                              moodEmoji[entry.mood.toLowerCase()] || "😐"
+                            }</span>
+                            <div><p class="font-medium text-gray-900 capitalize">${
+                              entry.mood
+                            }</p><p class="text-sm text-gray-600">${formatDate(
+            entry.entryDate
+          )}</p></div>
+                        </div>
+                        <div class="text-right"><p class="text-lg font-semibold text-gray-900">${
+                          entry.score
+                        }/10</p>${
+            entry.notes
+              ? `<p class="text-xs text-gray-500 truncate w-24" title="${entry.notes}">${entry.notes}</p>`
+              : ""
+          }</div>`;
+          recentMoodEntriesListEl.appendChild(entryDiv);
+        });
+      }
+    }
+    const selectedDays = moodChartPeriodSelectEl
+      ? parseInt(moodChartPeriodSelectEl.value)
+      : 7;
+    loadAndRenderMoodChart(selectedDays);
   } catch (error) {
-    console.error("Failed to load mood entries:", error);
-    recentMoodEntriesContainer.innerHTML = `<p class="text-center text-red-500">Could not load mood entries: ${error.message}</p>`;
+    console.error("Failed to load mood tracker data:", error);
+    if (moodStatStreakEl) moodStatStreakEl.textContent = "Error";
+    if (recentMoodEntriesListEl)
+      recentMoodEntriesListEl.innerHTML = `<p class="text-center text-red-500 py-4">Could not load data: ${error.message}</p>`;
   }
 }
 
 // --- Mood Chart ---
 async function loadAndRenderMoodChart(days = 7) {
-  if (!currentUser || !moodChartCanvas || typeof Chart === "undefined") {
-    if (moodChartInstance) moodChartInstance.destroy(); // Clear existing chart if user logs out
-    return;
+  if (!moodChartCanvas || typeof Chart === "undefined") return;
+  if (moodChartInstance) {
+    moodChartInstance.destroy();
+    moodChartInstance = null;
   }
+  if (!currentUser) return;
 
   try {
-    const chartDataFromAPI = await getMoodChartDataAPI(days); // from api.js
+    const chartDataFromAPI = await getMoodChartDataAPI(days);
     const labels = chartDataFromAPI.map((entry) =>
       formatDate(entry.entryDate, true)
     );
     const dataPoints = chartDataFromAPI.map((entry) => entry.score);
+    let chartDataConfig;
 
-    const chartData = {
-      labels: labels.length > 0 ? labels : ["No Data"],
-      datasets: [
-        {
-          label: "Mood Score",
-          data: dataPoints.length > 0 ? dataPoints : [0], // Provide a default if no data
-          borderColor: "#667eea",
-          backgroundColor: "rgba(102, 126, 234, 0.1)",
-          borderWidth: 3,
-          fill: true,
-          tension: 0.4,
-          pointBackgroundColor: "#667eea",
-          pointBorderColor: "#fff",
-          pointBorderWidth: 2,
-          pointRadius: 6,
-        },
-      ],
-    };
-
-    if (moodChartInstance) {
-      moodChartInstance.destroy(); // Destroy old chart before creating new
+    if (chartDataFromAPI.length > 0) {
+      chartDataConfig = {
+        labels: labels,
+        datasets: [
+          {
+            label: "Mood Score",
+            data: dataPoints,
+            borderColor: "#667eea",
+            backgroundColor: "rgba(102, 126, 234, 0.1)",
+            borderWidth: 3,
+            fill: true,
+            tension: 0.4,
+            pointBackgroundColor: "#667eea",
+            pointBorderColor: "#fff",
+            pointBorderWidth: 2,
+            pointRadius: 6,
+          },
+        ],
+      };
+    } else {
+      chartDataConfig = {
+        labels: ["No Data"],
+        datasets: [
+          {
+            label: "Mood Score",
+            data: [],
+            borderColor: "#cccccc",
+            backgroundColor: "rgba(204, 204, 204, 0.1)",
+          },
+        ],
+      };
     }
     moodChartInstance = new Chart(moodChartCanvas.getContext("2d"), {
       type: "line",
-      data: chartData,
+      data: chartDataConfig,
       options: {
-        /* ... same options as before ... */ responsive: true,
+        responsive: true,
         maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
+        plugins: {
+          legend: { display: false },
+          tooltip: { enabled: chartDataFromAPI.length > 0 },
+        },
         scales: {
           y: {
             beginAtZero: true,
@@ -753,43 +949,32 @@ async function loadAndRenderMoodChart(days = 7) {
     });
   } catch (error) {
     console.error("Error loading mood chart data:", error);
-    if (moodChartCanvas.getContext("2d")) {
-      // If canvas context exists, show error on chart
-      if (moodChartInstance) moodChartInstance.destroy();
-      // Optionally draw error text on canvas or display message nearby
-    }
   }
-}
-// Add event listener to the mood chart dropdown
-const moodChartPeriodSelect = document.querySelector("#mood-tracker select");
-if (moodChartPeriodSelect) {
-  moodChartPeriodSelect.addEventListener("change", (event) => {
-    const selectedPeriod = event.target.value; // e.g. "Last 7 days", "Last 30 days"
-    let days = 7;
-    if (selectedPeriod.includes("30")) days = 30;
-    else if (selectedPeriod.includes("3 months")) days = 90;
-    loadAndRenderMoodChart(days);
-  });
 }
 
 // --- Journal Functions ---
 function newJournalEntry() {
-  // UI only
   if (!journalFormEl) return;
   journalFormEl.classList.remove("hidden");
+  if (journalTitleInput) journalTitleInput.value = ""; // Clear previous editing content
+  if (journalContentInput) journalContentInput.value = "";
+  journalFormEl.removeAttribute("data-editing-id"); // Ensure not in edit mode
+  const saveBtn = document.getElementById("actualSaveJournalBtn");
+  if (saveBtn) saveBtn.textContent = "Save Entry"; // Reset button text
   if (journalContentInput) journalContentInput.focus();
 }
 
 function cancelJournalEntry() {
-  // UI only
   if (!journalFormEl) return;
   journalFormEl.classList.add("hidden");
   if (journalTitleInput) journalTitleInput.value = "";
   if (journalContentInput) journalContentInput.value = "";
+  journalFormEl.removeAttribute("data-editing-id");
+  const saveBtn = document.getElementById("actualSaveJournalBtn");
+  if (saveBtn) saveBtn.textContent = "Save Entry";
 }
 
 function usePrompt(prompt) {
-  // UI only
   newJournalEntry();
   if (journalContentInput) {
     journalContentInput.value = `${prompt}\n\n`;
@@ -798,83 +983,58 @@ function usePrompt(prompt) {
 }
 
 async function saveJournalEntry() {
-  console.log("Inside saveJournalEntry function"); // This should be the first log you see from this function
-
-  if (!currentUser) {
-    console.log("User not current, opening auth modal");
-    openAuthModal("login", "Please login to save a journal entry.");
+  if (
+    !currentUser ||
+    !journalFormEl ||
+    !journalTitleInput ||
+    !journalContentInput
+  )
     return;
-  }
-  // Ensure journalFormEl is defined and accessible in this scope
-  // It should be defined globally or passed as a parameter if necessary.
-  // Assuming journalFormEl, journalTitleInput, journalContentInput are globally defined (as per previous discussions)
-  if (!journalFormEl || !journalTitleInput || !journalContentInput) {
-    console.error("Journal form or input elements not found");
-    alert("An error occurred. Journal form elements are missing.");
-    return;
-  }
 
   const title = journalTitleInput.value.trim();
   const content = journalContentInput.value.trim();
   const editingId = journalFormEl.dataset.editingId;
-
-  console.log("Editing ID:", editingId);
-  console.log("Title:", title);
-  console.log("Content:", content);
 
   if (!content) {
     alert("Please write something before saving.");
     return;
   }
 
-  const saveBtn = document.getElementById("actualSaveJournalBtn"); // Ensure this ID is on your save button
-  let originalBtnText = "Save Entry"; // Default
+  const saveBtn = document.getElementById("actualSaveJournalBtn");
+  const originalBtnText = editingId ? "Update Entry" : "Save Entry";
   if (saveBtn) {
-    originalBtnText = editingId ? "Update Entry" : "Save Entry"; // Determine correct original text
     saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
     saveBtn.disabled = true;
   }
 
   try {
-    let response;
     if (editingId) {
-      console.log("Attempting to UPDATE journal entry ID:", editingId);
-      response = await updateJournalEntryAPI(editingId, {
-        title: title || "Untitled Entry", // Default title if empty during update
+      await updateJournalEntryAPI(editingId, {
+        title: title || "Untitled Entry",
         content,
-        // associatedMood: ... // If you have UI for this
       });
       alert("Journal entry updated successfully! ✍️");
-      if (journalFormEl) journalFormEl.removeAttribute("data-editing-id");
     } else {
-      console.log("Attempting to SAVE NEW journal entry");
-      response = await saveJournalAPI(
-        title || "Untitled Entry", // Default title if empty for new entry
+      await saveJournalAPI(
+        title || "Untitled Entry",
         content,
-        new Date().toISOString(), // entryDate for new
-        "" // associatedMood for new (empty string or based on UI)
+        new Date().toISOString(),
+        ""
       );
       alert("Journal entry saved successfully! ✍️");
     }
-    console.log("API Response:", response);
-
     cancelJournalEntry();
     loadAndRenderJournalEntries();
   } catch (error) {
-    console.error("Error in saveJournalEntry API call:", error);
-    if (error.data && error.data.message) {
-      // Check if backend sent a specific message
-      alert(`Error saving journal entry: ${error.data.message}`);
-    } else {
-      alert(
-        `Error saving journal entry: ${
-          error.message || "Unknown error"
-        }. Please check console.`
-      );
-    }
+    console.error("Error saving/updating journal entry:", error);
+    alert(
+      `Error: ${
+        error.data?.message || error.message || "Could not save journal entry."
+      }`
+    );
   } finally {
     if (saveBtn) {
-      saveBtn.innerHTML = originalBtnText; // Restore the correct original text
+      saveBtn.innerHTML = originalBtnText;
       saveBtn.disabled = false;
     }
   }
@@ -884,19 +1044,18 @@ async function loadAndRenderJournalEntries() {
   if (!currentUser || !journalEntriesContainer) return;
   try {
     const entries = await getJournalEntriesAPI();
-    journalEntriesContainer.innerHTML = ""; // Clear old entries
+    journalEntriesContainer.innerHTML = "";
     if (entries.length === 0) {
       journalEntriesContainer.innerHTML =
-        '<p class="text-center text-gray-500">No journal entries yet. Create one!</p>';
+        '<p class="text-center text-gray-500 py-4">No journal entries yet. Create one!</p>';
       return;
     }
     entries.forEach((entry) => {
-      const entryDiv = document.createElement("div");
-      // Using a unique border color based on mood or a default
       const borderColorClass = entry.associatedMood
         ? `border-${getMoodColor(entry.associatedMood)}-500`
         : "border-purple-500";
-      entryDiv.className = `border-l-4 ${borderColorClass} pl-6 py-4 mb-6`; // Added mb-6 for spacing
+      const entryDiv = document.createElement("div");
+      entryDiv.className = `border-l-4 ${borderColorClass} pl-6 py-4 mb-6`;
       entryDiv.innerHTML = `
                 <div class="flex items-center justify-between mb-2">
                     <h5 class="font-medium text-gray-900">${entry.title}</h5>
@@ -911,33 +1070,27 @@ async function loadAndRenderJournalEntries() {
                 <div class="flex items-center gap-4 mt-3">
                     <button class="text-gray-500 hover:text-gray-700 text-sm edit-journal-btn" data-id="${
                       entry._id
-                    }">
-                        <i class="fas fa-edit mr-1"></i>Edit
-                    </button>
+                    }"><i class="fas fa-edit mr-1"></i>Edit</button>
                     <button class="text-red-500 hover:text-red-700 text-sm delete-journal-btn" data-id="${
                       entry._id
-                    }">
-                        <i class="fas fa-trash mr-1"></i>Delete
-                    </button>
-                    <!-- Share button functionality not implemented -->
-                </div>
-            `;
+                    }"><i class="fas fa-trash mr-1"></i>Delete</button>
+                </div>`;
       journalEntriesContainer.appendChild(entryDiv);
     });
-
-    // Add event listeners for new edit/delete buttons
     document
       .querySelectorAll(".edit-journal-btn")
-      .forEach((btn) => btn.addEventListener("click", handleEditJournal));
+      .forEach((btn) => btn.addEventListener("click", handleEditJournalClick));
     document
       .querySelectorAll(".delete-journal-btn")
-      .forEach((btn) => btn.addEventListener("click", handleDeleteJournal));
+      .forEach((btn) =>
+        btn.addEventListener("click", handleDeleteJournalClick)
+      );
   } catch (error) {
     console.error("Failed to load journal entries:", error);
-    journalEntriesContainer.innerHTML = `<p class="text-center text-red-500">Could not load journal entries: ${error.message}</p>`;
+    if (journalEntriesContainer)
+      journalEntriesContainer.innerHTML = `<p class="text-center text-red-500 py-4">Could not load entries: ${error.message}</p>`;
   }
 }
-// Helper to get a color for journal border, add more moods if needed
 function getMoodColor(mood) {
   const colors = {
     happy: "green",
@@ -946,50 +1099,161 @@ function getMoodColor(mood) {
     calm: "indigo",
     stressed: "red",
   };
-  return colors[mood.toLowerCase()] || "purple";
+  return colors[mood?.toLowerCase()] || "purple";
 }
 
-async function handleEditJournal(event) {
+async function handleEditJournalClick(event) {
   const entryId = event.target.closest("button").dataset.id;
   try {
     const entry = await getJournalEntryByIdAPI(entryId);
     if (journalTitleInput) journalTitleInput.value = entry.title;
     if (journalContentInput) journalContentInput.value = entry.content;
-    // Store ID for saving later, e.g., on the form element
     if (journalFormEl) journalFormEl.dataset.editingId = entryId;
-    newJournalEntry(); // Show the form
-    // Change "Save Entry" button text to "Update Entry"
-    const saveBtn = document.querySelector(
-      '#journalForm button[onclick="saveJournalEntry()"]'
-    );
+    const saveBtn = document.getElementById("actualSaveJournalBtn");
     if (saveBtn) saveBtn.textContent = "Update Entry";
+    if (!journalFormEl.classList.contains("hidden")) {
+      // if form is already open, focus
+      if (journalContentInput) journalContentInput.focus();
+    } else {
+      newJournalEntry(); // Show the form (this will also focus)
+    }
+    // Scroll to form if it's far down
+    journalFormEl.scrollIntoView({ behavior: "smooth", block: "center" });
   } catch (error) {
     alert(`Error fetching journal entry for editing: ${error.message}`);
   }
 }
 
-async function handleDeleteJournal(event) {
+async function handleDeleteJournalClick(event) {
   const entryId = event.target.closest("button").dataset.id;
   if (confirm("Are you sure you want to delete this journal entry?")) {
     try {
       await deleteJournalEntryAPI(entryId);
       alert("Journal entry deleted.");
-      loadAndRenderJournalEntries(); // Refresh list
+      loadAndRenderJournalEntries();
     } catch (error) {
       alert(`Error deleting journal entry: ${error.message}`);
     }
   }
 }
 
-// --- Breathing Exercise (mostly unchanged, ensure modal elements are found) ---
+// --- Breathing Exercise ---
 function openBreathingExercise() {
-  /* ... same, ensure 'breathingModal' exists ... */
+  const modal = document.getElementById("breathingModal");
+  if (modal) modal.classList.remove("hidden");
 }
-// ... rest of breathing functions (startBreathing, stopBreathing, resetBreathingUI, closeBreathingExercise)
+function closeBreathingExercise() {
+  const modal = document.getElementById("breathingModal");
+  if (modal) modal.classList.add("hidden");
+  if (breathingInterval) {
+    clearInterval(breathingInterval);
+    breathingInterval = null;
+  }
+  resetBreathingUI();
+}
+function startBreathing() {
+  const circle = document.getElementById("breathingCircle");
+  const text = document.getElementById("breathingText");
+  const startBtn = document.getElementById("breathingStartBtn");
+  if (!circle || !text || !startBtn) return;
+
+  startBtn.textContent = "Stop";
+  startBtn.onclick = stopBreathing;
+  let phase = 0,
+    count = 0;
+  const phases = [
+    { text: "Breathe In", duration: 4, scaleClass: "scale-125" },
+    { text: "Hold", duration: 4, scaleClass: "scale-125" },
+    { text: "Breathe Out", duration: 6, scaleClass: "scale-75" },
+    { text: "Hold", duration: 2, scaleClass: "scale-75" },
+  ];
+  circle.className = `w-32 h-32 border-4 border-blue-500 rounded-full mx-auto mb-6 flex items-center justify-center transition-transform duration-1000 ease-in-out`;
+  function animatePhase() {
+    const currentPhase = phases[phase];
+    text.textContent = currentPhase.text;
+    circle.classList.remove("scale-75", "scale-125");
+    void circle.offsetWidth;
+    circle.classList.add(currentPhase.scaleClass);
+    count++;
+    if (count >= currentPhase.duration) {
+      phase = (phase + 1) % phases.length;
+      count = 0;
+    }
+  }
+  animatePhase();
+  breathingInterval = setInterval(animatePhase, 1000);
+}
+function stopBreathing() {
+  if (breathingInterval) {
+    clearInterval(breathingInterval);
+    breathingInterval = null;
+  }
+  resetBreathingUI();
+}
+function resetBreathingUI() {
+  const text = document.getElementById("breathingText");
+  const circle = document.getElementById("breathingCircle");
+  const startBtn = document.getElementById("breathingStartBtn");
+  if (text) text.textContent = "Breathe In";
+  if (circle)
+    circle.className =
+      "w-32 h-32 border-4 border-blue-500 rounded-full mx-auto mb-6 flex items-center justify-center";
+  if (startBtn) {
+    startBtn.textContent = "Start";
+    startBtn.onclick = startBreathing;
+  }
+}
+
+// Resource Functions (Placeholders)
+function openMeditationGuide() {
+  alert("Meditation guide coming soon! 🧘‍♀️");
+}
+function openGratitudePractice() {
+  alert("Gratitude practice coming soon! 🙏");
+}
+function openProgressiveRelaxation() {
+  alert("Progressive relaxation guide coming soon! 😌");
+}
+function openGroundingTechniques() {
+  alert("Grounding techniques coming soon! ⚓");
+}
+function openSelfCareIdeas() {
+  alert("Self-care ideas coming soon! ✨");
+}
 
 // --- Utility Functions ---
 function formatDate(dateString, short = false) {
-  /* ... same ... */
+  const date = new Date(dateString);
+  const today = new Date();
+  const yesterday = new Date(today);
+  yesterday.setDate(today.getDate() - 1);
+
+  if (short) {
+    return date.toLocaleDateString(undefined, {
+      month: "short",
+      day: "numeric",
+    });
+  }
+
+  if (date.toDateString() === today.toDateString()) {
+    return `Today, ${date.toLocaleTimeString(undefined, {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    })}`;
+  } else if (date.toDateString() === yesterday.toDateString()) {
+    return `Yesterday, ${date.toLocaleTimeString(undefined, {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    })}`;
+  } else {
+    return date.toLocaleDateString(undefined, {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  }
 }
 
 // --- Service Worker ---
@@ -997,20 +1261,9 @@ if ("serviceWorker" in navigator) {
   window.addEventListener("load", function () {
     navigator.serviceWorker
       .register("./sw.js")
-      .then(function (registration) {
-        // Path relative to origin
-        console.log("SW registered: ", registration);
-      })
-      .catch(function (registrationError) {
-        console.log("SW registration failed: ", registrationError);
-      });
+      .then((reg) => console.log("SW registered: ", reg))
+      .catch((err) => console.log("SW registration failed: ", err));
   });
 }
 
-console.log("MindMate App Initialized with Auth & API Integration 🧠✨");
-
-// Final check for elements (remove these console.logs in production)
-// console.log({
-//     authModalContainer, loginForm, registerForm, userProfileSection, loginPromptSection,
-//     chatMessagesContainer, chatInput, journalEntriesContainer, moodChartCanvas, recentMoodEntriesContainer
-// });
+console.log("MindMate App Initialized 🧠✨");
