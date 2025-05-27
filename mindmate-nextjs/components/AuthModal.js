@@ -1,6 +1,6 @@
 // components/AuthModal.js
 "use client";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 // Props: isOpen, onClose, onLogin, onRegister, initialError, initialFormType = 'login'
 export default function AuthModal({
@@ -16,6 +16,7 @@ export default function AuthModal({
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState(initialError || "");
+  const usernameInputRef = useRef(null);
 
   const handleSwitchForm = (type) => {
     setFormType(type);
@@ -61,6 +62,15 @@ export default function AuthModal({
       }
     }
   };
+
+  useEffect(() => {
+    if (isOpen && formType === "login" && usernameInputRef.current) {
+      usernameInputRef.current.focus();
+    } else if (isOpen && formType === "register" && usernameInputRef.current) {
+      // Assuming username field is same for register
+      usernameInputRef.current.focus();
+    }
+  }, [isOpen, formType]);
 
   if (!isOpen) return null;
 

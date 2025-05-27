@@ -7,6 +7,7 @@ export default function HomePage({
   onShowPage,
   onOpenBreathingExercise,
   onSelectMood,
+  recentActivities,
 }) {
   const moodEmojis = [
     { mood: "happy", emoji: "😊", label: "Happy" },
@@ -118,11 +119,43 @@ export default function HomePage({
           <h4 className="text-xl font-semibold text-gray-900 mb-4">
             Recent Activity
           </h4>
+          //{" "}
           <div id="recentActivityList" className="space-y-4">
-            {/* Example static items, replace with dynamic rendering */}
-            <p className="text-sm text-gray-500">
-              Recent activity will be shown here.
-            </p>
+            //{" "}
+            {recentActivities.length > 0 ? (
+              recentActivities.map((activity) => (
+                <div
+                  key={activity._id || activity.title}
+                  className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg"
+                >
+                  <div
+                    className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                      activity.type === "mood" ? "bg-green-100" : "bg-blue-100"
+                    }`}
+                  >
+                    <i
+                      className={`fas ${
+                        activity.type === "mood"
+                          ? "fa-heart text-green-600"
+                          : "fa-comments text-blue-600"
+                      } text-sm`}
+                    ></i>
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-gray-900 capitalize">
+                      {activity.type === "mood"
+                        ? `Mood Check: ${activity.mood}`
+                        : `Journal: ${activity.title}`}
+                    </p>
+                    <p className="text-xs text-gray-600">
+                      {formatDate(activity.date)}
+                    </p>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <p className="text-sm text-gray-500">No recent activity yet.</p>
+            )}
           </div>
         </div>
       </div>

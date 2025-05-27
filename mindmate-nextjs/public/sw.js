@@ -17,7 +17,7 @@ const assetsToCache = [
   // '/images/logo.png',
   // '/images/background.jpg',
 
-  "../offline.html", // A fallback page for when offline and page not cached
+  "/offline.html", // A fallback page for when offline and page not cached
 ];
 
 // 1. Install Event: Cache assets

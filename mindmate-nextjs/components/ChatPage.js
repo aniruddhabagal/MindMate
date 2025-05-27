@@ -13,6 +13,7 @@ export default function ChatPage({
   const [inputValue, setInputValue] = useState("");
   const [isTyping, setIsTyping] = useState(false); // API loading state
   const chatMessagesEndRef = useRef(null);
+  const inputRef = useRef(null);
 
   const scrollToBottom = () => {
     chatMessagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -79,6 +80,7 @@ export default function ChatPage({
       ]);
     } finally {
       setIsTyping(false);
+      inputRef.current?.focus();
     }
   };
 

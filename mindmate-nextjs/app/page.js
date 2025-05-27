@@ -57,6 +57,7 @@ export default function MindMateApp() {
   const [authModalType, setAuthModalType] = useState("login");
   const [authError, setAuthError] = useState("");
   const [isBreathingModalOpen, setIsBreathingModalOpen] = useState(false);
+  const [recentActivities, setRecentActivities] = useState([]);
 
   // Refs for data that might need to be force-refreshed in child components
   const moodDataVersion = useRef(0); // Increment to trigger refetch in MoodTrackerPage
@@ -226,6 +227,20 @@ export default function MindMateApp() {
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [isAuthModalOpen, isBreathingModalOpen, isMobileMenuOpen]); // Add dependencies
 
+  useEffect(() => {
+    if ("serviceWorker" in navigator && process.env.NODE_ENV === "production") {
+      window.addEventListener("load", () => {
+        // sw.js should be in the `public` folder for Next.js to serve it from the root
+        navigator.serviceWorker
+          .register("/sw.js")
+          .then((registration) => console.log("SW registered: ", registration))
+          .catch((registrationError) =>
+            console.log("SW registration failed: ", registrationError)
+          );
+      });
+    }
+  }, []);
+
   // --- Service Worker ---
   useEffect(() => {
     if ("serviceWorker" in navigator && process.env.NODE_ENV === "production") {
@@ -251,6 +266,7 @@ export default function MindMateApp() {
             onOpenBreathingExercise={openBreathingExercise}
             onSelectMood={handleSelectMoodOnHome} // Pass the specific handler
             isLoggedIn={!!currentUser}
+            recentActivities={recentActivities}
           />
         );
       case "chat":
@@ -292,6 +308,37 @@ export default function MindMateApp() {
         );
     }
   };
+
+  useEffect(() => {
+    const fetchRecentActivities = async () => {
+      if (!currentUser) {
+        setRecentActivities([]);
+        return;
+      }
+      try {
+        const [moods, journals] = await Promise.all([
+          apiClient.getMoodEntriesAPI(), // Fetches all, sorted newest first by backend
+          apiClient.getJournalEntriesAPI(), // Fetches all, sorted newest first
+        ]);
+
+        const moodActivities = moods
+          .slice(0, 2)
+          .map((m) => ({ type: "mood", ...m, date: m.entryDate }));
+        const journalActivities = journals
+          .slice(0, 2)
+          .map((j) => ({ type: "journal", ...j, date: j.entryDate }));
+
+        const combined = [...moodActivities, ...journalActivities]
+          .sort((a, b) => new Date(b.date) - new Date(a.date))
+          .slice(0, 3); // Take top 3 overall recent
+        setRecentActivities(combined);
+      } catch (error) {
+        console.error("Error fetching recent activities:", error);
+        setRecentActivities([]);
+      }
+    };
+    fetchRecentActivities();
+  }, [currentUser, moodDataVersion.current, journalDataVersion.current]); // Re-fetch if user or data changes
 
   return (
     <>

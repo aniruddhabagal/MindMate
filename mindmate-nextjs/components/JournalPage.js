@@ -1,6 +1,6 @@
 // components/JournalPage.js
 "use client";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { formatDate as formatDateUtil, getMoodColor } from "../lib/formatters"; // Assuming formatters.js is in lib
 
 // Props: currentUser, apiClient (object with all API functions), journalDataVersion
@@ -16,6 +16,7 @@ export default function JournalPage({
   const [content, setContent] = useState("");
   const [isLoading, setIsLoading] = useState(true); // For fetching entries
   const [isSaving, setIsSaving] = useState(false); // For save/update operation
+  const contentInputRef = useRef(null);
 
   const journalPromptsList = [
     { text: "What made you smile today?", icon: "💙" },
@@ -41,6 +42,12 @@ export default function JournalPage({
   useEffect(() => {
     fetchEntries();
   }, [fetchEntries, journalDataVersion]); // journalDataVersion from parent triggers refetch
+
+  useEffect(() => {
+    if (isFormVisible && contentInputRef.current) {
+      contentInputRef.current.focus();
+    }
+  }, [isFormVisible]);
 
   const handleNewEntryClick = () => {
     setEditingEntry(null);
