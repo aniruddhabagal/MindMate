@@ -2,6 +2,7 @@
 import Head from "next/head"; // For <Head> specific tags if needed inside components
 import Script from "next/script"; // For external scripts
 import "./globals.css"; // Import your global styles
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 export const metadata = {
   title: "MindMate - Your Mental Wellness Companion",
