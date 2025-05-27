@@ -37,6 +37,8 @@ async function checkAndDeductUserCredits(userInstance) {
 }
 
 export async function POST(request) {
+  let updatedCredits; // <<< DECLARE updatedCredits HERE, in the higher scope
+
   try {
     const userId = request.headers.get("x-user-id");
     if (!userId) {
@@ -51,8 +53,10 @@ export async function POST(request) {
     // --- Credit Check and Deduction ---
     try {
       const userForChat = await fetchUserForChat(userId); // Fetch user once
-      const updatedCredits = await checkAndDeductUserCredits(userForChat);
+      // Assign to the already declared updatedCredits
+      updatedCredits = await checkAndDeductUserCredits(userForChat); // <<< ASSIGN VALUE HERE
     } catch (creditError) {
+      // Ensure client knows about potential credit update even on error
       return NextResponse.json(
         { message: creditError.message, credits: creditError.credits },
         { status: creditError.status || 403 }
@@ -103,7 +107,7 @@ export async function POST(request) {
 
     const chatSession = geminiModel.startChat({
       history: historyForGemini,
-      generationConfig: { temperature: 0.7 },
+      generationConfig: { temperature: 0. },
       // System instruction is part of the geminiModel instance from geminiClient.js
     });
 
@@ -113,10 +117,10 @@ export async function POST(request) {
 
     return NextResponse.json({
       reply: botResponseText,
-      currentCredits: updatedCredits, // Send updated credits back to client
+      currentCredits: updatedCredits, // Now updatedCredits is accessible here
     });
   } catch (error) {
-    console.error("POST /api/chat error:", error);
+    console.error("POST /api/chat error:", error); // Log the full error object for more details
     // Check if it's a GoogleGenerativeAIError for more specific feedback
     if (
       error.name === "GoogleGenerativeAIError" ||
@@ -127,6 +131,8 @@ export async function POST(request) {
         { status: 400 }
       );
     }
+    // This specific check for blacklist error might not be needed if the creditError catch handles it.
+    // However, if other parts of the main try block could throw this, it's fine.
     if (
       error.message ===
       "Your account has been restricted from using this feature."
