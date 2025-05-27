@@ -111,6 +111,258 @@
     z-index: 50; /* Higher z-index for mobile to be above the overlay when open */
   }
 
+  .mindmate-loader-overlay {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(
+      237,
+      242,
+      247,
+      0.85
+    ); /* Lighter gray, e.g., Tailwind gray-100 with opacity */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    backdrop-filter: blur(5px);
+    padding: 1rem; /* Add padding for smaller screens */
+  }
+
+  .mindmate-loader-content {
+    /* Renamed from mindmate-loader for clarity */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative; /* For speech bubble tail */
+    background: linear-gradient(
+      145deg,
+      #5e50ee,
+      #7b3fdd
+    ); /* Purple-ish gradient */
+    padding: 2.5rem 3rem; /* Increased padding */
+    border-radius: 1.5rem; /* More rounded */
+    box-shadow: 0 20px 40px -10px rgba(94, 80, 238, 0.4),
+      0 10px 20px -10px rgba(123, 63, 221, 0.3);
+    width: auto; /* min-content; */ /* Fit content */
+    max-width: 300px;
+  }
+
+  /* Speech bubble tail - pseudo-element */
+  .mindmate-loader-content::after {
+    content: "";
+    position: absolute;
+    bottom: -18px; /* Position below the bubble */
+    left: 50%;
+    transform: translateX(-50%) rotate(45deg);
+    width: 30px;
+    height: 30px;
+    background: linear-gradient(
+      145deg,
+      #6a5ded,
+      #7b3fdd
+    ); /* Match gradient, adjust angle if needed */
+    /* Note: complex gradients on pseudo-elements can be tricky, solid color might be easier */
+    /* background-color: #695ce8; */
+    border-bottom-right-radius: 5px; /* Soften tail corner */
+    z-index: -1; /* Behind the main bubble content for a cleaner look */
+  }
+
+  .loader-brain-container {
+    position: relative;
+    width: 90px;
+    height: 90px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1.5rem; /* Space between brain and text */
+    /* background-color: rgba(255, 255, 255, 0.1); 
+  border-radius: 50%; */
+  }
+
+  .loader-brain-icon {
+    font-size: 3.5rem; /* fa-brain */
+    /* Color similar to your image's brain, adjust as needed */
+    color: #fce7f3; /* Light pink, e.g., Tailwind pink-100 */
+    /* color: #FF69B4; Hot Pink */
+    animation: brainPulseColor 2.5s infinite ease-in-out;
+    z-index: 10;
+    text-shadow: 0 0 10px rgba(252, 231, 243, 0.5); /* Subtle glow */
+  }
+
+  @keyframes brainPulseColor {
+    0%,
+    100% {
+      transform: scale(1);
+      opacity: 0.85;
+      color: #fce7f3; /* Light pink */
+    }
+    50% {
+      transform: scale(1.08);
+      opacity: 1;
+      color: #ffffff; /* Brighter white/pink */
+    }
+  }
+
+  /* Enhanced Wiring/Activity Effect */
+  .loader-activity {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    filter: blur(1px); /* Soften the dots */
+  }
+
+  .loader-activity .spark {
+    position: absolute;
+    background-color: #ec4899; /* Tailwind pink-500 */
+    border-radius: 50%;
+    opacity: 0;
+    animation: sparkTravel 2.5s infinite ease-out;
+  }
+  .loader-activity .spark-alt {
+    /* Different color/timing */
+    background-color: #a78bfa; /* Tailwind violet-400 */
+    animation-name: sparkTravelAlt; /* Use a different animation or just delay */
+    animation-duration: 2.8s;
+  }
+
+  /* Define multiple sparks with varying sizes, positions, and delays */
+  .loader-activity .spark-1 {
+    width: 5px;
+    height: 5px;
+    top: 50%;
+    left: 50%;
+    animation-delay: 0s;
+  }
+  .loader-activity .spark-2 {
+    width: 4px;
+    height: 4px;
+    top: 50%;
+    left: 50%;
+    animation-delay: 0.2s;
+  }
+  .loader-activity .spark-3 {
+    width: 6px;
+    height: 6px;
+    top: 50%;
+    left: 50%;
+    animation-delay: 0.4s;
+  }
+  .loader-activity .spark-4 {
+    width: 5px;
+    height: 5px;
+    top: 50%;
+    left: 50%;
+    animation-delay: 0.6s;
+  }
+  .loader-activity .spark-5 {
+    width: 4px;
+    height: 4px;
+    top: 50%;
+    left: 50%;
+    animation-delay: 0.8s;
+  }
+  .loader-activity .spark-6 {
+    width: 6px;
+    height: 6px;
+    top: 50%;
+    left: 50%;
+    animation-delay: 1s;
+  }
+
+  @keyframes sparkTravel {
+    0% {
+      transform: translate(-50%, -50%) scale(0.2);
+      opacity: 0;
+    } /* Start from center, small */
+    20% {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+    }
+    100% {
+      transform: translate(var(--tx, 0px), var(--ty, 0px)) scale(0.2);
+      opacity: 0;
+    } /* Move to target and fade */
+  }
+  @keyframes sparkTravelAlt {
+    /* Slightly different timing for variation */
+    0% {
+      transform: translate(-50%, -50%) scale(0.2);
+      opacity: 0;
+    }
+    25% {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(0.8);
+    }
+    100% {
+      transform: translate(var(--tx, 0px), var(--ty, 0px)) scale(0.1);
+      opacity: 0;
+    }
+  }
+
+  /* Define target translations for sparks to radiate outwards */
+  /* These assume the spark starts at top: 50%; left: 50%; transform: translate(-50%, -50%) */
+  .loader-activity .spark-1 {
+    --tx: 0px;
+    --ty: -45px;
+  } /* Up */
+  .loader-activity .spark-2 {
+    --tx: 40px;
+    --ty: -20px;
+  } /* Up-Right */
+  .loader-activity .spark-3 {
+    --tx: 35px;
+    --ty: 35px;
+  } /* Down-Right */
+  .loader-activity .spark-4 {
+    --tx: 0px;
+    --ty: 45px;
+  } /* Down */
+  .loader-activity .spark-5 {
+    --tx: -40px;
+    --ty: 20px;
+  } /* Down-Left */
+  .loader-activity .spark-6 {
+    --tx: -35px;
+    --ty: -35px;
+  } /* Up-Left */
+
+  .loader-text {
+    font-size: 1.05rem; /* Slightly larger */
+    color: #f3e8ff; /* Tailwind purple-100, good contrast on dark purple bg */
+    font-weight: 500;
+    margin-top: 0.75rem;
+    text-align: center;
+    animation: fadeInLoaderText 1.5s ease-in-out;
+  }
+
+  @keyframes fadeInLoaderText {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Custom Scrollbar (Optional - for lists inside ChatPage, JournalPage etc.) */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 10px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(124, 58, 237, 0.4); /* purple-600 with opacity */
+    border-radius: 10px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(124, 58, 237, 0.6);
+  }
+
   .sidebar.open {
     transform: translateX(0); /* Slides in when .open class is added */
   }
@@ -120,204 +372,250 @@
   position: fixed;
   inset: 0;
   background-color: rgba(
-    240,
+    237,
     242,
-    245,
+    247,
     0.85
-  ); /* Slightly off-white, more opaque */
+  ); /* Lighter gray, e.g., Tailwind gray-100 with opacity */
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 9999;
   backdrop-filter: blur(5px);
-  -webkit-backdrop-filter: blur(5px); /* For Safari */
+  padding: 1rem; /* Add padding for smaller screens */
 }
 
-.mindmate-loader {
+.mindmate-loader-content {
+  /* Renamed from mindmate-loader for clarity */
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 2rem;
+  position: relative; /* For speech bubble tail */
+  background: linear-gradient(
+    145deg,
+    #5e50ee,
+    #7b3fdd
+  ); /* Purple-ish gradient */
+  padding: 2.5rem 3rem; /* Increased padding */
+  border-radius: 1.5rem; /* More rounded */
+  box-shadow: 0 20px 40px -10px rgba(94, 80, 238, 0.4),
+    0 10px 20px -10px rgba(123, 63, 221, 0.3);
+  width: auto; /* min-content; */ /* Fit content */
+  max-width: 300px;
+}
+
+/* Speech bubble tail - pseudo-element */
+.mindmate-loader-content::after {
+  content: "";
+  position: absolute;
+  bottom: -18px; /* Position below the bubble */
+  left: 50%;
+  transform: translateX(-50%) rotate(45deg);
+  width: 30px;
+  height: 30px;
+  background: linear-gradient(
+    145deg,
+    #6a5ded,
+    #7b3fdd
+  ); /* Match gradient, adjust angle if needed */
+  /* Note: complex gradients on pseudo-elements can be tricky, solid color might be easier */
+  /* background-color: #695ce8; */
+  border-bottom-right-radius: 5px; /* Soften tail corner */
+  z-index: -1; /* Behind the main bubble content for a cleaner look */
 }
 
 .loader-brain-container {
   position: relative;
-  width: 110px; /* Slightly larger */
-  height: 110px;
+  width: 90px;
+  height: 90px;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.5rem; /* Space between brain and text */
+  /* background-color: rgba(255, 255, 255, 0.1); 
+  border-radius: 50%; */
 }
 
 .loader-brain-icon {
-  font-size: 3.8rem; /* Slightly larger */
-  /* Gradient color for the brain */
-  background: linear-gradient(
-    135deg,
-    #8b5cf6,
-    #6366f1
-  ); /* purple-500 to indigo-500 */
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  /* text-fill-color: transparent; */ /* Standard property, but -webkit- is more supported for gradient text */
-
-  animation: subtlePulseAndShine 2.5s infinite ease-in-out;
+  font-size: 3.5rem; /* fa-brain */
+  /* Color similar to your image's brain, adjust as needed */
+  color: #fce7f3; /* Light pink, e.g., Tailwind pink-100 */
+  /* color: #FF69B4; Hot Pink */
+  animation: brainPulseColor 2.5s infinite ease-in-out;
   z-index: 10;
-  filter: drop-shadow(0 0 8px rgba(102, 126, 234, 0.4)); /* indigo-500 glow */
+  text-shadow: 0 0 10px rgba(252, 231, 243, 0.5); /* Subtle glow */
 }
 
-@keyframes subtlePulseAndShine {
+@keyframes brainPulseColor {
   0%,
   100% {
     transform: scale(1);
-    opacity: 0.9;
-    filter: drop-shadow(0 0 8px rgba(102, 126, 234, 0.4));
+    opacity: 0.85;
+    color: #fce7f3; /* Light pink */
   }
   50% {
     transform: scale(1.08);
     opacity: 1;
-    filter: drop-shadow(0 0 12px rgba(139, 92, 246, 0.6)); /* purple-500 glow */
+    color: #ffffff; /* Brighter white/pink */
   }
 }
 
-/* Wiring/Network Effect - More dynamic lines */
-.loader-wiring {
+/* Enhanced Wiring/Activity Effect */
+.loader-activity {
   position: absolute;
   width: 100%;
   height: 100%;
-  /* border: 1px dashed blue; */ /* For debugging positions */
+  filter: blur(1px); /* Soften the dots */
 }
 
-.loader-wiring .line {
+.loader-activity .spark {
   position: absolute;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    #a78bfa,
-    transparent
-  ); /* purple-400 */
-  border-radius: 2px;
-  transform-origin: center;
+  background-color: #ec4899; /* Tailwind pink-500 */
+  border-radius: 50%;
   opacity: 0;
-  animation: drawLine 3s infinite ease-out;
+  animation: sparkTravel 2.5s infinite ease-out;
 }
-.loader-wiring .line.short {
-  height: 2px;
-  width: 20px;
-}
-.loader-wiring .line.medium {
-  height: 2px;
-  width: 30px;
-}
-.loader-wiring .line.long {
-  height: 2.5px;
-  width: 40px;
+.loader-activity .spark-alt {
+  /* Different color/timing */
+  background-color: #a78bfa; /* Tailwind violet-400 */
+  animation-name: sparkTravelAlt; /* Use a different animation or just delay */
+  animation-duration: 2.8s;
 }
 
-/* Positioning and rotation for lines to create a network effect */
-.loader-wiring .line-1 {
+/* Define multiple sparks with varying sizes, positions, and delays */
+.loader-activity .spark-1 {
+  width: 5px;
+  height: 5px;
   top: 50%;
-  left: -15%;
-  transform: translateY(-50%) rotate(30deg);
+  left: 50%;
   animation-delay: 0s;
 }
-.loader-wiring .line-2 {
-  top: 10%;
-  left: 50%;
-  transform: translateX(-50%) rotate(90deg);
-  animation-delay: 0.3s;
-}
-.loader-wiring .line-3 {
+.loader-activity .spark-2 {
+  width: 4px;
+  height: 4px;
   top: 50%;
-  right: -15%;
-  transform: translateY(-50%) rotate(-30deg);
-  animation-delay: 0.6s;
-}
-.loader-wiring .line-4 {
-  bottom: 10%;
   left: 50%;
-  transform: translateX(-50%) rotate(-90deg);
-  animation-delay: 0.9s;
-}
-.loader-wiring .line-5 {
-  top: 20%;
-  left: 0%;
-  transform: rotate(60deg);
-  animation-delay: 1.2s;
-}
-.loader-wiring .line-6 {
-  bottom: 20%;
-  right: 0%;
-  transform: rotate(60deg);
-  animation-delay: 1.5s;
-}
-.loader-wiring .line-7 {
-  top: 75%;
-  left: 5%;
-  transform: rotate(-45deg);
   animation-delay: 0.2s;
 }
-.loader-wiring .line-8 {
-  top: 25%;
-  right: 5%;
-  transform: rotate(135deg);
-  animation-delay: 0.7s;
+.loader-activity .spark-3 {
+  width: 6px;
+  height: 6px;
+  top: 50%;
+  left: 50%;
+  animation-delay: 0.4s;
+}
+.loader-activity .spark-4 {
+  width: 5px;
+  height: 5px;
+  top: 50%;
+  left: 50%;
+  animation-delay: 0.6s;
+}
+.loader-activity .spark-5 {
+  width: 4px;
+  height: 4px;
+  top: 50%;
+  left: 50%;
+  animation-delay: 0.8s;
+}
+.loader-activity .spark-6 {
+  width: 6px;
+  height: 6px;
+  top: 50%;
+  left: 50%;
+  animation-delay: 1s;
 }
 
-@keyframes drawLine {
+@keyframes sparkTravel {
   0% {
-    width: 0;
+    transform: translate(-50%, -50%) scale(0.2);
     opacity: 0;
-  }
-  10%,
+  } /* Start from center, small */
   20% {
-    /* Line appears and draws */
-    opacity: 0.7;
-    width: var(--final-width, 30px); /* Use CSS variable for final width */
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
   }
-  70% {
-    /* Line holds and starts to fade */
-    opacity: 0.5;
-    width: var(--final-width, 30px);
-  }
-  90%,
   100% {
-    /* Line fades and shrinks */
+    transform: translate(var(--tx, 0px), var(--ty, 0px)) scale(0.2);
     opacity: 0;
-    width: 0;
+  } /* Move to target and fade */
+}
+@keyframes sparkTravelAlt {
+  /* Slightly different timing for variation */
+  0% {
+    transform: translate(-50%, -50%) scale(0.2);
+    opacity: 0;
+  }
+  25% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(0.8);
+  }
+  100% {
+    transform: translate(var(--tx, 0px), var(--ty, 0px)) scale(0.1);
+    opacity: 0;
   }
 }
 
-/* Assign final widths to line classes (can also be done in JS if needed) */
-.loader-wiring .line.short {
-  --final-width: 25px;
-}
-.loader-wiring .line.medium {
-  --final-width: 40px;
-}
-.loader-wiring .line.long {
-  --final-width: 55px;
-}
+/* Define target translations for sparks to radiate outwards */
+/* These assume the spark starts at top: 50%; left: 50%; transform: translate(-50%, -50%) */
+.loader-activity .spark-1 {
+  --tx: 0px;
+  --ty: -45px;
+} /* Up */
+.loader-activity .spark-2 {
+  --tx: 40px;
+  --ty: -20px;
+} /* Up-Right */
+.loader-activity .spark-3 {
+  --tx: 35px;
+  --ty: 35px;
+} /* Down-Right */
+.loader-activity .spark-4 {
+  --tx: 0px;
+  --ty: 45px;
+} /* Down */
+.loader-activity .spark-5 {
+  --tx: -40px;
+  --ty: 20px;
+} /* Down-Left */
+.loader-activity .spark-6 {
+  --tx: -35px;
+  --ty: -35px;
+} /* Up-Left */
 
 .loader-text {
   font-size: 1.05rem; /* Slightly larger */
-  color: #374151; /* Tailwind gray-700 */
+  color: #f3e8ff; /* Tailwind purple-100, good contrast on dark purple bg */
   font-weight: 500;
-  margin-top: 1rem; /* Spacing from animation */
-  animation: fadeInText 2.5s infinite ease-in-out alternate;
-  letter-spacing: 0.5px;
+  margin-top: 0.75rem;
+  text-align: center;
+  animation: fadeInLoaderText 1.5s ease-in-out;
 }
 
-@keyframes fadeInText {
+@keyframes fadeInLoaderText {
   from {
-    opacity: 0.6;
-    transform: translateY(2px);
+    opacity: 0;
+    transform: translateY(10px);
   }
   to {
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+/* Custom Scrollbar (Optional - for lists inside ChatPage, JournalPage etc.) */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(124, 58, 237, 0.4); /* purple-600 with opacity */
+  border-radius: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(124, 58, 237, 0.6);
 }

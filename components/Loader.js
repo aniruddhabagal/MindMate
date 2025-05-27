@@ -1,113 +1,76 @@
 // components/Loader.js
 "use client";
 
-// Props:
-// - show: boolean to control visibility
-// - text: optional text to display below the loader
-// - fullPage: boolean, if true, it's an overlay, otherwise it's an inline loader
-// - size: 'small' | 'medium' | 'large' (default medium) for inline loaders
 export default function Loader({
   show = false,
-  text = "Connecting with MindMate...",
+  text = "Connecting your thoughts...",
   fullPage = true,
-  size = "medium",
 }) {
   if (!show) {
     return null;
   }
 
-  const brainIconSize = fullPage
-    ? "3.8rem"
-    : size === "small"
-    ? "1.8rem"
-    : "2.5rem";
-  const containerSize = fullPage ? "110px" : size === "small" ? "50px" : "70px";
-  const textClass = fullPage
-    ? "loader-text"
-    : size === "small"
-    ? "text-xs text-gray-500 mt-1"
-    : "text-sm text-gray-600 mt-2";
-  const marginBottom = fullPage
-    ? "1.5rem"
-    : size === "small"
-    ? "0.5rem"
-    : "1rem";
+  // Common loader content
+  const loaderContent = (
+    <div className="loader-brain-container">
+      <i className="fas fa-brain loader-brain-icon" aria-hidden="true"></i>
+      <div className="loader-activity">
+        <div className="spark spark-1"></div>
+        <div className="spark spark-2 spark-alt"></div>
+        <div className="spark spark-3"></div>
+        <div className="spark spark-4 spark-alt"></div>
+        <div className="spark spark-5"></div>
+        <div className="spark spark-6 spark-alt"></div>
+      </div>
+    </div>
+  );
 
   if (fullPage) {
     return (
-      <div
-        className="mindmate-loader-overlay"
-        role="status"
-        aria-live="polite"
-        aria-label={text || "Loading"}
-      >
-        <div className="mindmate-loader">
-          <div
-            className="loader-brain-container"
-            style={{
-              width: containerSize,
-              height: containerSize,
-              marginBottom,
-            }}
-          >
-            <i
-              className="fas fa-brain loader-brain-icon"
-              style={{ fontSize: brainIconSize }}
-              aria-hidden="true"
-            ></i>
-            <div className="loader-wiring">
-              <div className="line short line-1"></div>
-              <div className="line medium line-2"></div>
-              <div className="line long line-3"></div>
-              <div className="line short line-4"></div>
-              <div className="line medium line-5"></div>
-              <div className="line long line-6"></div>
-              <div className="line short line-7"></div>
-              <div className="line medium line-8"></div>
-            </div>
-          </div>
-          {text && <p className={textClass}>{text}</p>}
+      <div className="mindmate-loader-overlay" role="status" aria-live="polite">
+        <div className="mindmate-loader-content">
+          {" "}
+          {/* Updated class */}
+          {loaderContent}
+          {text && <p className="loader-text">{text}</p>}
         </div>
       </div>
     );
   }
 
-  // Inline loader
+  // Inline loader (can be simpler or use parts of the above)
   return (
     <div
-      className="flex flex-col items-center justify-center py-4"
+      className="flex flex-col items-center justify-center py-6"
       role="status"
       aria-live="polite"
-      aria-label={text || "Loading"}
     >
       <div
         className="loader-brain-container"
-        style={{ width: containerSize, height: containerSize, marginBottom }}
+        style={{ width: "70px", height: "70px", marginBottom: "1rem" }}
       >
         <i
           className="fas fa-brain loader-brain-icon"
-          style={{ fontSize: brainIconSize }}
+          style={{ fontSize: "2.5rem" }}
           aria-hidden="true"
         ></i>
-        {/* Simplified wiring for inline, or omit if too cluttered for small sizes */}
-        {(size === "medium" || size === "large") && (
+        {/* Simplified or fewer sparks for inline if desired */}
+        <div className="loader-activity">
           <div
-            className="loader-wiring"
-            style={{
-              transform: size === "small" ? "scale(0.6)" : "scale(0.8)",
-            }}
-          >
-            {" "}
-            {/* Scale down wiring for smaller inline */}
-            <div className="line short line-1"></div>
-            <div className="line medium line-2"></div>
-            <div className="line long line-3"></div>
-            <div className="line short line-4"></div>
-            {/* Add fewer lines for small size if desired */}
-          </div>
-        )}
+            className="spark spark-1"
+            style={{ animationDuration: "2s" }}
+          ></div>
+          <div
+            className="spark spark-3 spark-alt"
+            style={{ animationDuration: "2.2s" }}
+          ></div>
+          <div
+            className="spark spark-5"
+            style={{ animationDuration: "2.4s" }}
+          ></div>
+        </div>
       </div>
-      {text && <p className={textClass}>{text}</p>}
+      {text && <p className="text-sm text-gray-600 font-medium">{text}</p>}
     </div>
   );
 }
