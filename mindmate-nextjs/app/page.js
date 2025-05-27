@@ -11,43 +11,10 @@ import JournalPage from "../components/JournalPage";
 import ResourcesPage from "../components/ResourcesPage";
 import AuthModal from "../components/AuthModal";
 import BreathingModal from "../components/BreathingModal";
+import { formatDate } from "@/lib/formatters";
 
 // Import API functions
 import * as apiClient from "../lib/apiClient"; // Import all as apiClient
-
-// Utility function (can be in a separate utils/formatters.js file)
-export function formatDate(dateString, short = false) {
-  const date = new Date(dateString);
-  const today = new Date();
-  const yesterday = new Date(today);
-  yesterday.setDate(today.getDate() - 1);
-
-  if (short) {
-    return date.toLocaleDateString(undefined, {
-      month: "short",
-      day: "numeric",
-    });
-  }
-  if (date.toDateString() === today.toDateString()) {
-    return `Today, ${date.toLocaleTimeString(undefined, {
-      hour: "numeric",
-      minute: "2-digit",
-      hour12: true,
-    })}`;
-  } else if (date.toDateString() === yesterday.toDateString()) {
-    return `Yesterday, ${date.toLocaleTimeString(undefined, {
-      hour: "numeric",
-      minute: "2-digit",
-      hour12: true,
-    })}`;
-  } else {
-    return date.toLocaleDateString(undefined, {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
-  }
-}
 
 export default function MindMateApp() {
   const [currentPage, setCurrentPage] = useState("home");
@@ -349,7 +316,7 @@ export default function MindMateApp() {
             currentUser={currentUser}
             getMoodChartDataAPI={apiClient.getMoodChartDataAPI}
             getMoodEntriesAPI={apiClient.getMoodEntriesAPI}
-            // formatDate={formatDate} // Or component imports it
+            formatDate={formatDate}
             moodDataVersion={moodDataVersion.current} // Pass the current value
           />
         );

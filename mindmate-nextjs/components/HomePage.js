@@ -1,6 +1,8 @@
 // components/HomePage.js
 "use client";
 
+import { formatDate } from "@/lib/formatters";
+
 // Props: username, onShowPage, onOpenBreathingExercise, onSelectMood
 export default function HomePage({
   username,
