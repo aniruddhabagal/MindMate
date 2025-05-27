@@ -1,7 +1,7 @@
 // app/api/chat/route.js
 import dbConnect from "@/lib/dbConnect";
 import User from "@/models/User"; // For credit deduction
-import { model as geminiModel } from "@/lib/geminiClient"; // Assuming geminiClient.js is in lib/
+import { model as geminiModel } from "@/lib/geminiClient";
 import { NextResponse } from "next/server";
 
 async function fetchUserForChat(userId) {
