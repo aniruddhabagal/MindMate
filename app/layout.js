@@ -44,7 +44,7 @@ export const metadata = {
     siteName: "MindMate",
     images: [
       {
-        url: "https://mindmate.aniruddha.fyi/mindmate.png", // Full absolute URL
+        url: "https://opengraph.b-cdn.net/production/images/0fc673cc-73d9-47ce-8509-50b8ef50ca33.png?token=FynxC1IMsia-A6Dfz-fyb0FWKK3qYGL9RmD7BKvkqpI&height=1024&width=1024&expires=33284361000", // Full absolute URL
         width: 1200,
         height: 630,
         alt: "MindMate - Mental Wellness Companion",
@@ -59,7 +59,9 @@ export const metadata = {
     title: "MindMate - Your Mental Wellness Companion",
     description:
       "MindMate helps you manage stress, reflect on your emotions, and receive positive, supportive guidance.",
-    images: ["https://mindmate.aniruddha.fyi/mindmate.png"], // Full absolute URL
+    images: [
+      "https://opengraph.b-cdn.net/production/images/0fc673cc-73d9-47ce-8509-50b8ef50ca33.png?token=FynxC1IMsia-A6Dfz-fyb0FWKK3qYGL9RmD7BKvkqpI&height=1024&width=1024&expires=33284361000",
+    ], // Full absolute URL
     creator: "@AniruddhaBagal", // Add your Twitter handle
   },
   robots: {
@@ -116,7 +118,7 @@ export default function RootLayout({ children }) {
         <meta property="og:type" content="website" />
         <meta
           property="og:image"
-          content="https://mindmate.aniruddha.fyi/mindmate.png"
+          content="https://opengraph.b-cdn.net/production/images/0fc673cc-73d9-47ce-8509-50b8ef50ca33.png?token=FynxC1IMsia-A6Dfz-fyb0FWKK3qYGL9RmD7BKvkqpI&height=1024&width=1024&expires=33284361000"
         />
         <meta property="og:url" content="https://mindmate.aniruddha.fyi" />
         <meta
@@ -129,7 +131,7 @@ export default function RootLayout({ children }) {
         {/* Enhanced Open Graph Image Properties */}
         <meta
           property="og:image:secure_url"
-          content="https://mindmate.aniruddha.fyi/mindmate.png"
+          content="https://opengraph.b-cdn.net/production/images/0fc673cc-73d9-47ce-8509-50b8ef50ca33.png?token=FynxC1IMsia-A6Dfz-fyb0FWKK3qYGL9RmD7BKvkqpI&height=1024&width=1024&expires=33284361000"
         />
         <meta property="og:image:width" content="1200" />
         <meta property="og:image:height" content="630" />
@@ -153,7 +155,7 @@ export default function RootLayout({ children }) {
         />
         <meta
           name="twitter:image"
-          content="https://mindmate.aniruddha.fyi/mindmate.png"
+          content="https://opengraph.b-cdn.net/production/images/0fc673cc-73d9-47ce-8509-50b8ef50ca33.png?token=FynxC1IMsia-A6Dfz-fyb0FWKK3qYGL9RmD7BKvkqpI&height=1024&width=1024&expires=33284361000"
         />
         <meta
           name="twitter:image:alt"
