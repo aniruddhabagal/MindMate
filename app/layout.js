@@ -108,21 +108,25 @@ export default function RootLayout({ children }) {
         <meta charSet="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-        {/* Additional Meta Tags for WhatsApp & Social Media */}
+        {/* Core Open Graph Meta Tags - Required by Protocol */}
         <meta
-          name="format-detection"
-          content="telephone=no, date=no, email=no, address=no"
+          property="og:title"
+          content="MindMate - Your Mental Wellness Companion"
         />
-        <meta name="mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-        <meta name="apple-mobile-web-app-title" content="MindMate" />
-
-        {/* Explicit meta tags for better social media compatibility */}
+        <meta property="og:type" content="website" />
         <meta
           property="og:image"
           content="https://mindmate.aniruddha.fyi/mindmate.png"
         />
+        <meta property="og:url" content="https://mindmate.aniruddha.fyi" />
+        <meta
+          property="og:description"
+          content="MindMate helps you manage stress, reflect on your emotions, and receive positive, supportive guidance. Your personal mental wellness companion for a healthier mind."
+        />
+        <meta property="og:site_name" content="MindMate" />
+        <meta property="og:locale" content="en_US" />
+
+        {/* Enhanced Open Graph Image Properties */}
         <meta
           property="og:image:secure_url"
           content="https://mindmate.aniruddha.fyi/mindmate.png"
@@ -134,6 +138,19 @@ export default function RootLayout({ children }) {
           content="MindMate - Mental Wellness Companion"
         />
         <meta property="og:image:type" content="image/png" />
+
+        {/* Twitter Card Meta Tags */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:site" content="@AniruddhaBagal" />
+        <meta name="twitter:creator" content="@AniruddhaBagal" />
+        <meta
+          name="twitter:title"
+          content="MindMate - Your Mental Wellness Companion"
+        />
+        <meta
+          name="twitter:description"
+          content="MindMate helps you manage stress, reflect on your emotions, and receive positive, supportive guidance."
+        />
         <meta
           name="twitter:image"
           content="https://mindmate.aniruddha.fyi/mindmate.png"
@@ -142,6 +159,23 @@ export default function RootLayout({ children }) {
           name="twitter:image:alt"
           content="MindMate - Mental Wellness Companion"
         />
+
+        {/* Additional Social Media Meta Tags */}
+        <meta property="article:author" content="MindMate Team" />
+        <meta
+          property="article:publisher"
+          content="https://mindmate.aniruddha.fyi"
+        />
+
+        {/* Mobile and App Meta Tags */}
+        <meta
+          name="format-detection"
+          content="telephone=no, date=no, email=no, address=no"
+        />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-mobile-web-app-title" content="MindMate" />
 
         {/* Preconnect for Performance */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
