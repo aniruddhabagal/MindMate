@@ -64,6 +64,10 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
+  if (!url.protocol.startsWith("http")) {
+    return;
+  }
+
   // Navigation requests (HTML pages)
   if (request.mode === "navigate") {
     event.respondWith(
