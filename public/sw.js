@@ -53,22 +53,22 @@ self.addEventListener("fetch", (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // --- IMPORTANT: Bypass Service Worker for API calls ---
-  // Let API calls (to our backend) go directly to the network.
+  // Skip unsupported schemes like 'chrome-extension://'
+  if (url.protocol.startsWith("chrome-extension")) {
+    return;
+  }
+
+  // --- Bypass API calls ---
   if (url.origin === self.origin && url.pathname.startsWith("/api/")) {
-    // console.log('[SW] Bypassing cache for API request:', request.url);
-    // For API POST/PUT/DELETE, just fetch. For GET, could implement network-first if desired,
-    // but for data APIs, usually network is preferred.
     event.respondWith(fetch(request));
     return;
   }
 
-  // Handle navigation requests (HTML pages) - Network first, then cache, then offline fallback
+  // Navigation requests (HTML pages)
   if (request.mode === "navigate") {
     event.respondWith(
       fetch(request)
         .then((networkResponse) => {
-          // Check if we received a valid response
           if (networkResponse && networkResponse.ok) {
             const responseToCache = networkResponse.clone();
             caches.open(CACHE_NAME).then((cache) => {
@@ -78,54 +78,41 @@ self.addEventListener("fetch", (event) => {
           return networkResponse;
         })
         .catch(() => {
-          // Network failed, try cache
           return caches.match(request).then((cachedResponse) => {
-            return cachedResponse || caches.match("/offline.html"); // If not in cache, show offline
+            return cachedResponse || caches.match("/offline.html");
           });
         })
     );
     return;
   }
 
-  // For other GET requests (CSS, JS from CDNs, images from /public)
-  // Cache-first strategy
+  // GET requests for other assets
   if (request.method === "GET") {
     event.respondWith(
       caches.match(request).then((cachedResponse) => {
         if (cachedResponse) {
-          // console.log('[SW] Serving from cache:', request.url);
           return cachedResponse;
         }
-        // console.log('[SW] Fetching from network:', request.url);
         return fetch(request)
           .then((networkResponse) => {
-            if (networkResponse && networkResponse.ok) {
-              // Check if the response type is cacheable (basic or cors for external assets)
-              if (
-                networkResponse.type === "basic" ||
-                networkResponse.type === "cors"
-              ) {
-                const responseToCache = networkResponse.clone();
-                caches.open(CACHE_NAME).then((cache) => {
-                  cache.put(request, responseToCache);
-                });
-              }
+            if (
+              networkResponse &&
+              networkResponse.ok &&
+              (networkResponse.type === "basic" ||
+                networkResponse.type === "cors")
+            ) {
+              const responseToCache = networkResponse.clone();
+              caches.open(CACHE_NAME).then((cache) => {
+                cache.put(request, responseToCache);
+              });
             }
             return networkResponse;
           })
           .catch((error) => {
-            console.warn(
-              "[SW] Fetch failed for non-API, non-navigate GET request:",
-              request.url,
-              error
-            );
-            // Optionally, for specific asset types like images, you could return a placeholder
+            console.warn("[SW] Fetch failed:", request.url, error);
           });
       })
     );
     return;
   }
-
-  // For non-GET requests or unhandled, let the browser handle it by default
-  // console.log('[SW] Letting browser handle request:', request.url);
 });
