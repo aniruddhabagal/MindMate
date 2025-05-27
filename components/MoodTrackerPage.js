@@ -49,25 +49,21 @@ export default function MoodTrackerPage({
       const firstEntryDate = new Date(sortedEntries[0].entryDate);
       firstEntryDate.setHours(0, 0, 0, 0);
 
-      let expectedDate = new Date(todayForStreak); // Initialize expectedDate
+      let expectedDate = new Date(todayForStreak);
 
-      // Check if the most recent entry is today or yesterday to start a streak
       let streakStartDateCheck = new Date(todayForStreak);
       if (firstEntryDate.getTime() === streakStartDateCheck.getTime()) {
-        // Entry today
         currentStreak = 1;
-        expectedDate.setDate(streakStartDateCheck.getDate() - 1); // Expect yesterday
+        expectedDate.setDate(streakStartDateCheck.getDate() - 1);
       } else {
-        streakStartDateCheck.setDate(streakStartDateCheck.getDate() - 1); // Check for yesterday
+        streakStartDateCheck.setDate(streakStartDateCheck.getDate() - 1);
         if (firstEntryDate.getTime() === streakStartDateCheck.getTime()) {
-          // Entry yesterday
           currentStreak = 1;
-          expectedDate.setDate(streakStartDateCheck.getDate() - 1); // Expect day before yesterday
+          expectedDate.setDate(streakStartDateCheck.getDate() - 1);
         }
       }
 
       if (currentStreak > 0) {
-        // Only continue if a streak has started
         for (let i = 1; i < sortedEntries.length; i++) {
           const entryDate = new Date(sortedEntries[i].entryDate);
           entryDate.setHours(0, 0, 0, 0);
@@ -75,12 +71,8 @@ export default function MoodTrackerPage({
             currentStreak++;
             expectedDate.setDate(expectedDate.getDate() - 1);
           } else if (entryDate.getTime() < expectedDate.getTime()) {
-            // Gap in days, streak broken
             break;
           }
-          // If entryDate.getTime() > expectedDate.getTime(), it means multiple entries on the same expected day,
-          // or an entry from a future date somehow got in (unlikely if sorted).
-          // The current logic correctly expects distinct past days.
         }
       }
     }
@@ -95,7 +87,7 @@ export default function MoodTrackerPage({
     if (thisWeekEntries.length > 0) {
       const moodCounts = thisWeekEntries.reduce((acc, entry) => {
         acc[entry.mood.toLowerCase()] =
-          (acc[entry.mood.toLowerCase()] || 0) + 1; // Use toLowerCase for consistency
+          (acc[entry.mood.toLowerCase()] || 0) + 1;
         return acc;
       }, {});
       dominantMoodThisWeek = Object.keys(moodCounts).reduce((a, b) =>
@@ -117,18 +109,22 @@ export default function MoodTrackerPage({
   const renderOrUpdateChart = useCallback(
     async (days) => {
       if (!currentUser || !getMoodChartDataAPI || !chartRef.current) {
+        console.log(
+          "renderOrUpdateChart: Aborting - missing currentUser, API function, or canvas ref."
+        );
         if (chartInstanceRef.current) {
           chartInstanceRef.current.destroy();
           chartInstanceRef.current = null;
         }
-        // Don't set isLoading to false here, let the main data fetching effect handle it
+        // setIsLoading(false); // Let calling effect handle this
         return;
       }
 
-      // setIsLoading(true); // This might be handled by the calling effect already
+      // setIsLoading(true); // Set by calling effect
 
       try {
         const chartAPIData = await getMoodChartDataAPI(days);
+
         const labels = (chartAPIData || []).map((entry) =>
           formatDateUtil(entry.entryDate, true)
         );
@@ -173,11 +169,18 @@ export default function MoodTrackerPage({
         };
 
         if (chartInstanceRef.current) {
-          chartInstanceRef.current.data = chartConfigData.data; // Update data directly
-          chartInstanceRef.current.options = chartOptions; // Update options if they can change
+          console.log(
+            "renderOrUpdateChart: Updating existing chart instance with new data for days:",
+            days
+          );
+          chartInstanceRef.current.data = chartConfigData; // Assign new data object
+          // chartInstanceRef.current.options = chartOptions; // Only necessary if options change
           chartInstanceRef.current.update();
         } else if (chartRef.current) {
-          // Ensure canvas element is available
+          console.log(
+            "renderOrUpdateChart: Creating new chart instance for days:",
+            days
+          );
           chartInstanceRef.current = new Chart(
             chartRef.current.getContext("2d"),
             {
@@ -188,7 +191,7 @@ export default function MoodTrackerPage({
           );
         }
       } catch (error) {
-        console.error("Failed to render mood chart:", error);
+        console.error("Failed to render/update mood chart:", error);
         toast.error(
           `Error loading chart: ${error.data?.message || error.message}`
         );
@@ -197,14 +200,14 @@ export default function MoodTrackerPage({
           chartInstanceRef.current = null;
         }
       }
-      // setIsLoading(false); // Let the main data fetching effect handle the final isLoading
+      // setIsLoading(false); // Let calling effect handle this
     },
     [currentUser, getMoodChartDataAPI, formatDateUtil]
-  );
+  ); // Dependencies of this callback
 
   // Main data fetching effect: runs on mount (if currentUser), or when user/moodDataVersion changes
   useEffect(() => {
-    const loadAllData = async () => {
+    const loadPageData = async () => {
       if (!currentUser || !getMoodEntriesAPI) {
         calculateAndSetStats([]);
         if (chartInstanceRef.current) {
@@ -216,26 +219,25 @@ export default function MoodTrackerPage({
       }
 
       console.log(
-        "MoodTrackerPage: Main data fetch triggered. CurrentUser:",
-        !!currentUser,
-        "Version:",
-        moodDataVersion
-      ); // DEBUG
+        `MoodTrackerPage: Main useEffect - Loading all data. User: ${!!currentUser}, Version: ${moodDataVersion}, Days: ${selectedChartDays}`
+      );
       setIsLoading(true);
       try {
         const allEntries = await getMoodEntriesAPI();
         calculateAndSetStats(allEntries || []);
-        // After stats are calculated (which might be quick), then render chart for selected days
-        // This ensures renderOrUpdateChart has the latest context if needed, though it fetches its own data
+
+        // Initial chart render with current selectedChartDays
         await renderOrUpdateChart(selectedChartDays);
       } catch (error) {
-        // Errors from getMoodEntriesAPI are handled in fetchAllEntriesForStats (now part of this)
-        // Errors from renderOrUpdateChart are handled within it
         console.error(
-          "MoodTrackerPage: Error in main data fetching sequence",
+          "MoodTrackerPage: Error in main data fetching sequence (loadPageData)",
           error
         );
-        // Ensure UI reflects error state if not already handled by sub-functions
+        toast.error(
+          `Failed to load mood page data: ${
+            error.data?.message || error.message
+          }`
+        );
         calculateAndSetStats([]);
         if (chartInstanceRef.current) {
           chartInstanceRef.current.destroy();
@@ -246,7 +248,9 @@ export default function MoodTrackerPage({
       }
     };
 
-    loadAllData();
+    loadPageData();
+    // IMPORTANT: selectedChartDays is included here because the initial chart render needs it.
+    // Changes to selectedChartDays *after* this initial load are handled by the next useEffect.
   }, [
     currentUser,
     moodDataVersion,
@@ -255,26 +259,30 @@ export default function MoodTrackerPage({
     renderOrUpdateChart,
     selectedChartDays,
   ]);
-  // ^^^ selectedChartDays is included here so the initial chart load uses the correct period.
 
-  // Effect to update chart ONLY when selectedChartDays changes AFTER initial load
-  // We need a way to distinguish initial load from subsequent period changes.
-  const isInitialMount = useRef(true);
+  // Effect to update chart ONLY when selectedChartDays changes AFTER the initial load handled by the above effect.
+  const isInitialRenderForPeriodEffect = useRef(true); // To skip first run of this specific effect
   useEffect(() => {
-    if (isInitialMount.current) {
-      isInitialMount.current = false; // Set to false after first run
-      return; // Don't run on initial mount, main useEffect handles initial chart render
+    if (isInitialRenderForPeriodEffect.current) {
+      isInitialRenderForPeriodEffect.current = false;
+      // If selectedChartDays is ALREADY what the main useEffect used, don't re-fetch/re-render chart.
+      // This check is a bit redundant now since the main useEffect depends on selectedChartDays for initial chart too.
+      // The main purpose of this effect is to react to *subsequent* changes of selectedChartDays.
+      return;
     }
 
     if (currentUser && chartRef.current) {
       console.log(
-        "MoodTrackerPage: Chart period changed by dropdown, re-rendering chart for days:",
+        "MoodTrackerPage: Period Change useEffect - Updating chart for days:",
         selectedChartDays
-      ); // DEBUG
-      setIsLoading(true); // Indicate chart specific loading
-      renderOrUpdateChart(selectedChartDays).finally(() => setIsLoading(false));
+      );
+      setIsLoading(true); // Show loader for chart update
+      renderOrUpdateChart(selectedChartDays).finally(() => {
+        setIsLoading(false);
+      });
     }
-  }, [currentUser, selectedChartDays, renderOrUpdateChart]); // Only depends on these to re-render chart
+    // renderOrUpdateChart is stable due to useCallback. This effect runs purely on selectedChartDays changing (and currentUser).
+  }, [currentUser, selectedChartDays, renderOrUpdateChart]);
 
   // Cleanup chart instance on component unmount
   useEffect(() => {
@@ -283,14 +291,18 @@ export default function MoodTrackerPage({
         chartInstanceRef.current.destroy();
         chartInstanceRef.current = null;
       }
+      isInitialRenderForPeriodEffect.current = true; // Reset for next mount if any
     };
   }, []);
 
   const handlePeriodChange = (e) => {
-    setSelectedChartDays(parseInt(e.target.value));
+    if (!isLoading) {
+      // Prevent changing filter while data is loading
+      setSelectedChartDays(parseInt(e.target.value));
+    }
   };
 
-  // JSX for loading states and login prompt (before main return)
+  // Conditional rendering for loading/login prompt (before main return)
   if (!currentUser && !isLoading) {
     return (
       <div className="flex flex-col items-center justify-center h-full text-gray-500 py-10">
@@ -305,7 +317,6 @@ export default function MoodTrackerPage({
     (!stats || stats.total === 0) &&
     recentEntries.length === 0
   ) {
-    // More specific initial loading for the whole page content
     return (
       <Loader
         show={true}
