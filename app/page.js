@@ -11,6 +11,7 @@ import JournalPage from "../components/JournalPage";
 import ResourcesPage from "../components/ResourcesPage";
 import AuthModal from "../components/AuthModal";
 import BreathingModal from "../components/BreathingModal";
+import Loader from "../components/Loader";
 import { formatDate } from "@/lib/formatters";
 
 // Import API functions
@@ -26,6 +27,7 @@ export default function MindMateApp() {
   const [authError, setAuthError] = useState("");
   const [isBreathingModalOpen, setIsBreathingModalOpen] = useState(false);
   const [recentActivities, setRecentActivities] = useState([]);
+  const [isAppLoading, setIsAppLoading] = useState(true); // Global loading state
 
   // Refs for data that might need to be force-refreshed in child components
   const moodDataVersion = useRef(0); // Increment to trigger refetch in MoodTrackerPage
@@ -44,6 +46,7 @@ export default function MindMateApp() {
 
   // --- Authentication ---
   const checkAuth = useCallback(async () => {
+    setIsAppLoading(true);
     const token = apiClient.getToken();
     const localUser = apiClient.getLoggedInUser(); // This now gets { _id, username, credits, role } if stored correctly
 
@@ -78,6 +81,7 @@ export default function MindMateApp() {
       );
       setCurrentUser(null);
     }
+    setIsAppLoading(false);
   }, []);
 
   useEffect(() => {
@@ -365,76 +369,90 @@ export default function MindMateApp() {
     fetchRecentActivities();
   }, [currentUser, moodDataVersion.current, journalDataVersion.current]); // Re-fetch if user or data changes
 
+  if (isAppLoading && currentUser === null) {
+    // Show full page loader only if no user yet (initial load)
+    // OR if (isAppLoading && !initialAuthCheckDone) using another state variable
+    return (
+      <Loader show={true} text="Initializing MindMate..." fullPage={true} />
+    );
+  }
+
   return (
     <>
-      <div
-        id="mobileOverlay"
-        className={`fixed inset-0 bg-black bg-opacity-50 z-30 md:hidden ${
-          isMobileMenuOpen ? "" : "hidden"
-        }`}
-        onClick={toggleMobileMenu}
-      ></div>
-
-      <div
-        className={`fixed top-0 left-0 h-full bg-white w-64 min-h-screen shadow-xl border-r border-gray-200 transition-transform duration-300 ease-in-out md:translate-x-0 ${
-          isMobileMenuOpen ? "translate-x-0 z-50" : "-translate-x-full z-40" // Ensure z-index changes
-        } md:z-40`}
-      >
-        <Sidebar
-          onShowPage={handleShowPage}
-          currentPage={currentPage}
-          currentUser={currentUser}
-        />
-      </div>
-
-      <div
-        id="mainContentArea"
-        className={`transition-all duration-300 ease-in-out md:ml-64 min-h-screen ${
-          isMobileMenuOpen && !isAuthModalOpen
-            ? "blur-sm md:blur-none pointer-events-none md:pointer-events-auto"
-            : ""
-        } ${isAuthModalOpen ? "blur-sm pointer-events-none" : ""}`}
-      >
-        <Header
-          pageTitle={pageTitles[currentPage] || "MindMate"}
-          onMobileMenuToggle={toggleMobileMenu}
-          username={currentUser?.username}
-          credits={currentUser?.credits}
-          onLogout={handleLogout}
-          onOpenLoginModal={() => openLoginModal("login")}
-          isLoggedIn={!!currentUser}
-        />
-        <main className="p-6">
-          {currentUser === undefined ? (
-            <p>Loading user...</p>
-          ) : (
-            renderPageContent()
+      <Loader
+        show={isAppLoading && !currentUser}
+        text="Initializing MindMate..."
+        fullPage={true}
+      />
+      {/* More precise control */}
+      {!(isAppLoading && !currentUser) && (
+        <>
+          <div
+            id="mobileOverlay"
+            className={`fixed inset-0 bg-black bg-opacity-50 z-30 md:hidden ${
+              isMobileMenuOpen ? "" : "hidden"
+            }`}
+            onClick={toggleMobileMenu}
+          ></div>
+          <div
+            className={`fixed top-0 left-0 h-full bg-white w-64 min-h-screen shadow-xl border-r border-gray-200 transition-transform duration-300 ease-in-out md:translate-x-0 ${
+              isMobileMenuOpen ? "translate-x-0 z-50" : "-translate-x-full z-40" // Ensure z-index changes
+            } md:z-40`}
+          >
+            <Sidebar
+              onShowPage={handleShowPage}
+              currentPage={currentPage}
+              currentUser={currentUser}
+            />
+          </div>
+          <div
+            id="mainContentArea"
+            className={`transition-all duration-300 ease-in-out md:ml-64 min-h-screen ${
+              isMobileMenuOpen && !isAuthModalOpen
+                ? "blur-sm md:blur-none pointer-events-none md:pointer-events-auto"
+                : ""
+            } ${isAuthModalOpen ? "blur-sm pointer-events-none" : ""}`}
+          >
+            <Header
+              pageTitle={pageTitles[currentPage] || "MindMate"}
+              onMobileMenuToggle={toggleMobileMenu}
+              username={currentUser?.username}
+              credits={currentUser?.credits}
+              onLogout={handleLogout}
+              onOpenLoginModal={() => openLoginModal("login")}
+              isLoggedIn={!!currentUser}
+            />
+            <main className="p-6">
+              {currentUser === undefined ? (
+                <p>Loading user...</p>
+              ) : (
+                renderPageContent()
+              )}
+            </main>
+          </div>
+          {currentUser && (
+            <button
+              onClick={() => handleShowPage("chat")}
+              className="floating-button bg-gradient-to-r from-purple-500 to-indigo-600 text-white w-14 h-14 rounded-full shadow-lg hover:shadow-xl transition-all fixed bottom-6 right-6 z-20"
+              aria-label="Open Chat"
+            >
+              <i className="fas fa-comments text-xl"></i>
+            </button>
           )}
-        </main>
-      </div>
-
-      {currentUser && (
-        <button
-          onClick={() => handleShowPage("chat")}
-          className="floating-button bg-gradient-to-r from-purple-500 to-indigo-600 text-white w-14 h-14 rounded-full shadow-lg hover:shadow-xl transition-all fixed bottom-6 right-6 z-20"
-          aria-label="Open Chat"
-        >
-          <i className="fas fa-comments text-xl"></i>
-        </button>
+          <AuthModal
+            isOpen={isAuthModalOpen}
+            onClose={() => setIsAuthModalOpen(false)}
+            onLogin={handleLogin}
+            onRegister={handleRegister}
+            initialFormType={authModalType}
+            initialError={authError}
+          />
+          <BreathingModal
+            isOpen={isBreathingModalOpen}
+            onClose={closeBreathingExercise}
+          />
+        </>
       )}
-
-      <AuthModal
-        isOpen={isAuthModalOpen}
-        onClose={() => setIsAuthModalOpen(false)}
-        onLogin={handleLogin}
-        onRegister={handleRegister}
-        initialFormType={authModalType}
-        initialError={authError}
-      />
-      <BreathingModal
-        isOpen={isBreathingModalOpen}
-        onClose={closeBreathingExercise}
-      />
     </>
   );
 }

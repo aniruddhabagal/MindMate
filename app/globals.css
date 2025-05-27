@@ -2,103 +2,290 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap");
 
 * {
-    font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
 }
 
 .gradient-bg {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 
 .chat-bubble-user {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    border-radius: 18px 18px 4px 18px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 18px 18px 4px 18px;
 }
 
 .chat-bubble-bot {
-    background: #f1f5f9;
-    border-radius: 18px 18px 18px 4px;
-    border: 1px solid #e2e8f0;
+  background: #f1f5f9;
+  border-radius: 18px 18px 18px 4px;
+  border: 1px solid #e2e8f0;
 }
 
 .mood-card {
-    transition: all 0.3s ease;
-    cursor: pointer;
+  transition: all 0.3s ease;
+  cursor: pointer;
 }
 
 .mood-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+  transform: translateY(-4px);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
 }
 
 .mood-card.selected {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
 }
 
 .floating-button {
-    position: fixed;
-    bottom: 24px;
-    right: 24px;
-    z-index: 1000;
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 1000;
 }
 
 .page {
-    display: none;
+  display: none;
 }
 
 .page.active {
-    display: block;
+  display: block;
 }
 
 .typing-indicator {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 12px 16px;
 }
 
 .typing-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background-color: #94a3b8;
-    animation: typing 1.4s infinite ease-in-out;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #94a3b8;
+  animation: typing 1.4s infinite ease-in-out;
 }
 
-.typing-dot:nth-child(1) { animation-delay: -0.32s; }
-.typing-dot:nth-child(2) { animation-delay: -0.16s; }
+.typing-dot:nth-child(1) {
+  animation-delay: -0.32s;
+}
+.typing-dot:nth-child(2) {
+  animation-delay: -0.16s;
+}
 
 @keyframes typing {
-    0%, 80%, 100% { transform: scale(0); opacity: 0.5; }
-    40% { transform: scale(1); opacity: 1; }
+  0%,
+  80%,
+  100% {
+    transform: scale(0);
+    opacity: 0.5;
+  }
+  40% {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
 .sidebar {
-    transition: transform 0.3s ease; /* For mobile slide animation */
-    
-    /* --- Desktop and default styles --- */
-    position: fixed;    /* Makes the sidebar fixed to the viewport */
-    top: 0;             /* Aligns it to the top */
-    left: 0;            /* Aligns it to the left */
-    height: 100vh;      /* Makes it full viewport height */
-    /* width is controlled by Tailwind's w-64 class on the element */
-    z-index: 40;        /* Ensures it's above other content if needed, adjust as necessary. 
+  transition: transform 0.3s ease; /* For mobile slide animation */
+
+  /* --- Desktop and default styles --- */
+  position: fixed; /* Makes the sidebar fixed to the viewport */
+  top: 0; /* Aligns it to the top */
+  left: 0; /* Aligns it to the left */
+  height: 100vh; /* Makes it full viewport height */
+  /* width is controlled by Tailwind's w-64 class on the element */
+  z-index: 40; /* Ensures it's above other content if needed, adjust as necessary. 
                            This is lower than mobile's z-index to interact correctly with the mobile overlay. */
 }
 
-@media (max-width: 768px) { /* Corresponds to Tailwind's 'md' breakpoint */
-    .sidebar {
-        /* --- Overrides for mobile --- */
-        transform: translateX(-100%); /* Initially hidden off-screen on mobile */
-        /* position: fixed; is inherited from the base .sidebar rule */
-        /* height: 100vh; is inherited */
-        z-index: 50; /* Higher z-index for mobile to be above the overlay when open */
-    }
-    
-    .sidebar.open {
-        transform: translateX(0); /* Slides in when .open class is added */
-    }
+@media (max-width: 768px) {
+  /* Corresponds to Tailwind's 'md' breakpoint */
+  .sidebar {
+    /* --- Overrides for mobile --- */
+    transform: translateX(-100%); /* Initially hidden off-screen on mobile */
+    /* position: fixed; is inherited from the base .sidebar rule */
+    /* height: 100vh; is inherited */
+    z-index: 50; /* Higher z-index for mobile to be above the overlay when open */
+  }
+
+  .sidebar.open {
+    transform: translateX(0); /* Slides in when .open class is added */
+  }
+}
+
+.mindmate-loader-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(249, 250, 251, 0.8); /* bg-gray-50 with opacity */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999; /* Very high z-index */
+  backdrop-filter: blur(4px);
+}
+
+.mindmate-loader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  /* background-color: white;
+  border-radius: 1rem;
+  box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04); */
+}
+
+.loader-brain-container {
+  position: relative;
+  width: 100px; /* Adjust size as needed */
+  height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+}
+
+.loader-brain-icon {
+  font-size: 3.5rem; /* Adjust size */
+  color: #667eea; /* Tailwind indigo-500 */
+  animation: pulseBrain 2s infinite ease-in-out;
+  z-index: 10;
+}
+
+@keyframes pulseBrain {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 0.8;
+  }
+}
+
+/* Wiring/Network Effect - Abstracted with dots */
+.loader-wiring {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+}
+
+.loader-wiring .dot {
+  position: absolute;
+  background-color: #7c3aed; /* Tailwind purple-600 */
+  border-radius: 50%;
+  opacity: 0;
+  animation: radiateDot 3s infinite ease-out;
+}
+
+/* Define positions and delays for several dots */
+.loader-wiring .dot-1 {
+  width: 6px;
+  height: 6px;
+  top: 10%;
+  left: 45%;
+  animation-delay: 0s;
+}
+.loader-wiring .dot-2 {
+  width: 4px;
+  height: 4px;
+  top: 25%;
+  left: 75%;
+  animation-delay: 0.3s;
+}
+.loader-wiring .dot-3 {
+  width: 5px;
+  height: 5px;
+  top: 70%;
+  left: 80%;
+  animation-delay: 0.6s;
+}
+.loader-wiring .dot-4 {
+  width: 6px;
+  height: 6px;
+  top: 80%;
+  left: 30%;
+  animation-delay: 0.9s;
+}
+.loader-wiring .dot-5 {
+  width: 4px;
+  height: 4px;
+  top: 50%;
+  left: 10%;
+  animation-delay: 1.2s;
+}
+.loader-wiring .dot-6 {
+  width: 5px;
+  height: 5px;
+  top: 20%;
+  left: 20%;
+  animation-delay: 1.5s;
+}
+
+@keyframes radiateDot {
+  0% {
+    transform: scale(0.1) translate(0, 0);
+    opacity: 0;
+  }
+  20% {
+    /* Appears */
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  80% {
+    /* Moves outwards and fades */
+    transform: scale(1.5) translate(calc(var(--tx, 0px)), calc(var(--ty, 0px)));
+    opacity: 0;
+  }
+  100% {
+    transform: scale(0.1) translate(0, 0);
+    opacity: 0;
+  }
+}
+
+/* Specific translations for each dot to radiate outwards */
+.loader-wiring .dot-1 {
+  --tx: 0px;
+  --ty: -30px;
+}
+.loader-wiring .dot-2 {
+  --tx: 25px;
+  --ty: -15px;
+}
+.loader-wiring .dot-3 {
+  --tx: 20px;
+  --ty: 20px;
+}
+.loader-wiring .dot-4 {
+  --tx: -25px;
+  --ty: 15px;
+}
+.loader-wiring .dot-5 {
+  --tx: -30px;
+  --ty: 0px;
+}
+.loader-wiring .dot-6 {
+  --tx: -15px;
+  --ty: -20px;
+}
+
+.loader-text {
+  font-size: 1rem;
+  color: #4b5563; /* Tailwind gray-600 */
+  font-weight: 500;
+  margin-top: 0.5rem;
+  animation: pulseText 2s infinite ease-in-out alternate;
+}
+
+@keyframes pulseText {
+  from {
+    opacity: 0.7;
+  }
+  to {
+    opacity: 1;
+  }
 }
