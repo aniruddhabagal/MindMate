@@ -29,6 +29,7 @@ export default function MindMateApp() {
   const [isBreathingModalOpen, setIsBreathingModalOpen] = useState(false);
   const [recentActivities, setRecentActivities] = useState([]);
   const [isAppLoading, setIsAppLoading] = useState(true); // Global loading state
+  const [isLoggingOut, setIsLoggingOut] = useState(false); // Already added this in previous step for logout button
 
   // Refs for data that might need to be force-refreshed in child components
   const moodDataVersion = useRef(0); // Increment to trigger refetch in MoodTrackerPage
@@ -149,12 +150,23 @@ export default function MindMateApp() {
   };
 
   const handleLogout = async () => {
-    await apiClient.logoutAPI();
-    setCurrentUser(null);
-    setCurrentPage("home");
-    moodDataVersion.current++; // To clear data in child components
-    journalDataVersion.current++;
-    // Chat history reset is handled in ChatPage via useEffect on currentUser
+    setIsLoggingOut(true);
+    try {
+      await apiClient.logoutAPI();
+      setCurrentUser(null);
+      setCurrentPage("home");
+      moodDataVersion.current++; // To clear data in child components
+      journalDataVersion.current++;
+      // Chat history reset is handled in ChatPage via useEffect on currentUser
+    } catch (error) {
+      console.error("Error during logout:", error);
+      toast.error("Logout failed. Please try again.");
+      // Still attempt to clear user state for UI consistency
+      setCurrentUser(null);
+      setCurrentPage("home");
+    } finally {
+      setIsLoggingOut(false);
+    }
   };
 
   const openLoginModal = (type = "login", message = "") => {
@@ -426,6 +438,7 @@ export default function MindMateApp() {
               onLogout={handleLogout}
               onOpenLoginModal={() => openLoginModal("login")}
               isLoggedIn={!!currentUser}
+              isLoggingOut={isLoggingOut}
             />
             <main className="p-6">
               {currentUser === undefined ? (
