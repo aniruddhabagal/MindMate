@@ -1,0 +1,6 @@
+chmod +x rewrite-author.sh
+./rewrite-author.sh
+
+add git remote
+
+git push --force --tags
