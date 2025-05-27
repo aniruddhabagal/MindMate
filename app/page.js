@@ -435,7 +435,7 @@ export default function MindMateApp() {
               )}
             </main>
           </div>
-          {currentUser && (
+          {currentUser && currentPage !== "chat" && (
             <button
               onClick={() => handleShowPage("chat")}
               className="floating-button bg-gradient-to-r from-purple-500 to-indigo-600 text-white w-14 h-14 rounded-full shadow-lg hover:shadow-xl transition-all fixed bottom-6 right-6 z-20"
