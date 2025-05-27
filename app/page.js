@@ -2,6 +2,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import toast from "react-hot-toast";
 import Sidebar from "../components/Sidebar";
 import Header from "../components/Header";
 import HomePage from "../components/HomePage";
@@ -196,9 +197,12 @@ export default function MindMateApp() {
       return false; // Indicate failure
     }
     const score = apiClient.getMoodScore(mood);
+    const toastId = toast.loading(`Logging "${mood}" mood...`);
+
     try {
       await apiClient.logMoodAPI(mood, score);
-      alert(`Mood "${mood}" logged!`);
+      toast.dismiss(toastId);
+      toast.success(`Mood "${mood}" logged successfully!`);
       moodDataVersion.current++; // Trigger MoodTrackerPage to refetch
       // Potentially update currentUser.credits if credits are affected
       // const updatedUser = await apiClient.getCurrentUserAPI(); // One way to get fresh credits
@@ -206,7 +210,10 @@ export default function MindMateApp() {
       return true;
     } catch (error) {
       console.error("Error logging mood:", error);
-      alert("Could not log mood: " + error.message);
+      toast.dismiss(toastId);
+      toast.error(
+        `Could not log mood: ${error.data?.message || error.message}`
+      );
       return false;
     }
   };

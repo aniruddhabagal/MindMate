@@ -3,6 +3,7 @@ import "./globals.css";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/next";
 import Script from "next/script";
+import { Toaster } from "react-hot-toast";
 
 // ✅ Enhanced but Clean Metadata (Based on working example + additional features)
 export const metadata = {
@@ -137,6 +138,55 @@ export default function RootLayout({ children }) {
         />
       </head>
       <body className="bg-gray-50 min-h-screen">
+        <Toaster
+          position="top-right" // Or 'top-center', 'bottom-right', etc.
+          reverseOrder={false} // False: newer toasts on top
+          gutter={8} // Spacing between toasts
+          containerClassName="" // Optional: custom class for the container
+          containerStyle={{}} // Optional: custom style for the container
+          toastOptions={{
+            // Default options for all toasts
+            className: "", // Custom class for individual toasts
+            duration: 5000, // Default duration
+            style: {
+              background: "#363636", // Dark background (Tailwind gray-800)
+              color: "#fff", // White text
+              borderRadius: "8px",
+              padding: "12px 16px",
+              boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+            },
+
+            // Default options for specific types
+            success: {
+              duration: 3000,
+              theme: {
+                primary: "green",
+                secondary: "black",
+              },
+              iconTheme: {
+                primary: "#10B981", // Tailwind green-500
+                secondary: "#fff",
+              },
+              style: {
+                background: "#ECFDF5", // Tailwind green-50
+                color: "#065F46", // Tailwind green-800
+                border: "1px solid #A7F3D0", // Tailwind green-200
+              },
+            },
+            error: {
+              duration: 5000,
+              iconTheme: {
+                primary: "#EF4444", // Tailwind red-500
+                secondary: "#fff",
+              },
+              style: {
+                background: "#FEF2F2", // Tailwind red-50
+                color: "#991B1B", // Tailwind red-800
+                border: "1px solid #FECACA", // Tailwind red-200
+              },
+            },
+          }}
+        />
         <Script
           src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"
           strategy="beforeInteractive"

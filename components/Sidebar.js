@@ -2,7 +2,8 @@
 "use client";
 // import Link from 'next/link'; // If using Next.js router for admin page
 // import { usePathname } from 'next/navigation';
-
+import Logo from "@/public/mindmate.png";
+import Image from "next/image";
 export default function Sidebar({ onShowPage, currentPage, currentUser }) {
   // const pathname = usePathname(); // For Next.js Link active state
 
@@ -28,6 +29,7 @@ export default function Sidebar({ onShowPage, currentPage, currentUser }) {
           <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-indigo-600 rounded-xl flex items-center justify-center">
             <i className="fas fa-brain text-white text-lg"></i>
           </div>
+          {/* <Image src={Logo} alt="Logo" height={80} /> */}
           <div>
             <h1 className="text-xl font-bold text-gray-900">MindMate</h1>
             <p className="text-sm text-gray-500">Your wellness companion</p>

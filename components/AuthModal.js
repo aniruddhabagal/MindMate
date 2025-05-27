@@ -1,6 +1,7 @@
 // components/AuthModal.js
 "use client";
 import { useState, useEffect, useRef } from "react"; // Added useEffect, useRef
+import toast from "react-hot-toast";
 
 export default function AuthModal({
   isOpen,
@@ -48,44 +49,55 @@ export default function AuthModal({
     e.preventDefault();
     setError("");
     setIsLoading(true); // <<< Start loading
-
-    if (formType === "login") {
-      if (!username || !password) {
-        setError("Username and password are required.");
-        setIsLoading(false); // <<< Stop loading on validation error
-        return;
+    const toastId = toast.loading("Processing..."); // Generic loading
+    try {
+      if (formType === "login") {
+        if (!username || !password) {
+          setError("Username and password are required.");
+          setIsLoading(false); // <<< Stop loading on validation error
+          return;
+        }
+        try {
+          await onLogin(username, password); // onLogin in app/page.js will handle closing modal
+          toast.dismiss(toastId);
+        } catch (err) {
+          setError(err.message || "Login failed.");
+        } finally {
+          setIsLoading(false); // <<< Stop loading
+        }
+      } else {
+        // register
+        if (!username || !password || !confirmPassword) {
+          setError("All fields are required.");
+          setIsLoading(false);
+          return;
+        }
+        if (password !== confirmPassword) {
+          setError("Passwords do not match.");
+          setIsLoading(false);
+          return;
+        }
+        if (password.length < 6) {
+          setError("Password must be at least 6 characters.");
+          setIsLoading(false);
+          return;
+        }
+        try {
+          await onRegister(username, password); // onRegister in app/page.js will handle closing modal
+          toast.dismiss(toastId);
+        } catch (err) {
+          setError(err.message || "Registration failed.");
+        } finally {
+          setIsLoading(false);
+        }
       }
-      try {
-        await onLogin(username, password); // onLogin in app/page.js will handle closing modal
-      } catch (err) {
-        setError(err.message || "Login failed.");
-      } finally {
-        setIsLoading(false); // <<< Stop loading
-      }
-    } else {
-      // register
-      if (!username || !password || !confirmPassword) {
-        setError("All fields are required.");
-        setIsLoading(false);
-        return;
-      }
-      if (password !== confirmPassword) {
-        setError("Passwords do not match.");
-        setIsLoading(false);
-        return;
-      }
-      if (password.length < 6) {
-        setError("Password must be at least 6 characters.");
-        setIsLoading(false);
-        return;
-      }
-      try {
-        await onRegister(username, password); // onRegister in app/page.js will handle closing modal
-      } catch (err) {
-        setError(err.message || "Registration failed.");
-      } finally {
-        setIsLoading(false);
-      }
+    } catch (err) {
+      // Catches errors re-thrown by onLogin/onRegister
+      toast.dismiss(toastId);
+      setError(err.message || "Operation failed."); // Still set local error for display in modal
+      // toast.error(err.message || "Operation failed."); // Optionally, also show a toast for API errors
+    } finally {
+      setIsLoading(false);
     }
   };
 

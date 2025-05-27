@@ -1,6 +1,7 @@
 // components/ChatPage.js
 "use client";
 import { useState, useEffect, useRef, useCallback } from "react";
+import toast from "react-hot-toast";
 import { formatDate, moodEmojis } from "../lib/formatters"; // Assuming formatters.js
 import Loader from "./Loader";
 
@@ -212,7 +213,9 @@ export default function ChatPage({
       setIsEditingTitle(false);
     } catch (error) {
       console.error("Error updating chat title:", error);
-      alert(`Failed to update title: ${error.data?.message || error.message}`);
+      toast.error(
+        `Failed to update title: ${error.data?.message || error.message}`
+      );
       setEditableTitle(originalTitle); // Revert on error
     }
   };

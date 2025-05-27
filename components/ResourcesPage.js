@@ -1,5 +1,6 @@
 // components/ResourcesPage.js
 "use client";
+import toast from "react-hot-toast";
 
 // Props: openBreathingExercise (function)
 export default function ResourcesPage({ openBreathingExercise }) {
@@ -18,7 +19,7 @@ export default function ResourcesPage({ openBreathingExercise }) {
       color: "purple",
       description:
         "Simple meditation practices for mindfulness and stress relief.",
-      action: () => alert("Meditation Guide coming soon!"),
+      action: () => toast("Meditation Guide coming soon!"),
     },
     {
       title: "Gratitude Practice",
@@ -26,21 +27,21 @@ export default function ResourcesPage({ openBreathingExercise }) {
       color: "green",
       description:
         "Daily gratitude exercises to shift perspective and boost mood.",
-      action: () => alert("Gratitude Practice coming soon!"),
+      action: () => toast("Gratitude Practice coming soon!"),
     },
     {
       title: "Progressive Relaxation",
       icon: "fa-spa",
       color: "yellow",
       description: "Step-by-step muscle relaxation techniques.",
-      action: () => alert("Progressive Relaxation coming soon!"),
+      action: () => toast("Progressive Relaxation coming soon!"),
     },
     {
       title: "Grounding Techniques",
       icon: "fa-anchor",
       color: "indigo",
       description: "Methods to stay present and manage overwhelming feelings.",
-      action: () => alert("Grounding Techniques coming soon!"),
+      action: () => toast("Grounding Techniques coming soon!"),
     },
     {
       title: "Self-Care Ideas",
@@ -48,7 +49,7 @@ export default function ResourcesPage({ openBreathingExercise }) {
       color: "pink",
       description:
         "Simple and effective self-care activities for daily wellness.",
-      action: () => alert("Self-Care Ideas coming soon!"),
+      action: () => toast("Self-Care Ideas coming soon!"),
     },
   ];
 

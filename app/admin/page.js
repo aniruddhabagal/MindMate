@@ -2,6 +2,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import toast from "react-hot-toast";
 import * as apiClient from "@/lib/apiClient"; // Adjust path
 
 // A client-side component to protect the admin page content
@@ -83,7 +84,7 @@ export default function AdminPage() {
         }));
       } catch (error) {
         console.error("Error fetching users:", error);
-        alert("Failed to fetch users: " + error.message);
+        toast.error("Failed to fetch users: " + error.message);
       } finally {
         setIsLoadingUsers(false);
       }
@@ -124,7 +125,7 @@ export default function AdminPage() {
 
     // Basic validation
     if (isNaN(updates.credits) || updates.credits < 0) {
-      alert("Credits must be a non-negative number.");
+      toast.error("Credits must be a non-negative number.");
       return;
     }
 
@@ -134,12 +135,14 @@ export default function AdminPage() {
         method: "PUT",
         body: JSON.stringify(updates),
       });
-      alert("User updated successfully!");
+      toast.success("User updated successfully!");
       setEditingUser(null); // Close edit form
       fetchUsers(pagination.currentPage); // Refresh user list
     } catch (error) {
       console.error("Error updating user:", error);
-      alert("Failed to update user: " + (error.data?.message || error.message));
+      toast.error(
+        "Failed to update user: " + (error.data?.message || error.message)
+      );
     }
   };
 
