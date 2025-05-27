@@ -60,28 +60,24 @@ self.addEventListener("activate", (event) => {
 
 // 3. Fetch Event: Serve from cache or network, with offline fallback
 self.addEventListener("fetch", (event) => {
-  // We only want to handle GET requests
-  if (event.request.method !== "GET") {
+  // Only handle HTTP and HTTPS GET requests
+  if (event.request.method !== "GET" || !event.request.url.startsWith("http")) {
     return;
   }
 
-  // Cache-first strategy for navigation requests (HTML pages)
+  // Navigation requests: Cache-first strategy with network fallback
   if (event.request.mode === "navigate") {
     event.respondWith(
       caches.open(CACHE_NAME).then((cache) => {
         return cache.match(event.request).then((cachedResponse) => {
           const fetchedResponse = fetch(event.request)
             .then((networkResponse) => {
-              // Check if we received a valid response
               if (networkResponse && networkResponse.ok) {
                 cache.put(event.request, networkResponse.clone());
               }
               return networkResponse;
             })
-            .catch(() => {
-              // Network failed, try to serve offline page
-              return caches.match("../offline.html");
-            });
+            .catch(() => caches.match("/offline.html"));
           return cachedResponse || fetchedResponse;
         });
       })
@@ -89,34 +85,25 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // For other requests (CSS, JS, images), use a cache-first strategy
+  // Other requests: Cache-first strategy
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       if (cachedResponse) {
-        // console.log('[SW] Serving from cache:', event.request.url);
         return cachedResponse;
       }
-      // console.log('[SW] Fetching from network:', event.request.url);
       return fetch(event.request)
         .then((networkResponse) => {
-          // Check if we received a valid response
           if (networkResponse && networkResponse.ok) {
-            // Cache the new resource
             return caches.open(CACHE_NAME).then((cache) => {
               cache.put(event.request, networkResponse.clone());
               return networkResponse;
             });
           }
-          return networkResponse; // Return even if not ok, or it's an opaque response
+          return networkResponse;
         })
         .catch(() => {
-          // Network request failed, and not in cache.
-          // For non-navigation requests, we might not want an HTML fallback.
-          // You could return a specific placeholder image/style if appropriate.
-          // For now, let the browser handle the error (e.g., broken image icon).
-          if (event.request.url.endsWith(".html")) {
-            // Only for HTML pages try offline
-            return caches.match("../offline.html");
+          if (event.request.destination === "document") {
+            return caches.match("/offline.html");
           }
         });
     })
