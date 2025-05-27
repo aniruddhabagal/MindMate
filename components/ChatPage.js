@@ -2,6 +2,7 @@
 "use client";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { formatDate, moodEmojis } from "../lib/formatters"; // Assuming formatters.js
+import Loader from "./Loader";
 
 // Props: currentUser, apiClient, onChatCreditDeduction, updateUserCredits
 export default function ChatPage({
@@ -425,13 +426,14 @@ export default function ChatPage({
           )}
         </button>
         <div className="flex-grow overflow-y-auto custom-scrollbar">
-          {" "}
           {/* Sessions list container with custom scrollbar if needed */}
           {isLoadingSessions && (
-            <p className="text-xs text-gray-500 text-center py-2">
-              Loading sessions...
-            </p>
+            <Loader show={true} text="Loading chats..." fullPage={false} />
           )}
+          {!isLoadingSessions && sessions.length === 0 && (
+            <p>No chat sessions.</p>
+          )}
+
           {!isLoadingSessions && sessions.length === 0 && (
             <p className="text-xs text-gray-500 text-center py-2">
               No chat sessions yet. Start one!

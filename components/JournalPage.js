@@ -2,6 +2,7 @@
 "use client";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { formatDate as formatDateUtil, getMoodColor } from "../lib/formatters"; // Assuming formatters.js is in lib
+import Loader from "./Loader";
 
 // Props: currentUser, apiClient (object with all API functions), journalDataVersion
 export default function JournalPage({
@@ -274,14 +275,11 @@ export default function JournalPage({
           <h4 className="text-lg font-semibold text-gray-900 mb-6">
             Recent Entries
           </h4>
-          {isLoading && entries.length === 0 && (
-            <p className="text-center text-gray-500">Loading entries...</p>
+          {isLoading && (
+            <Loader show={true} text="Loading entries..." fullPage={false} />
           )}
-          {!isLoading && entries.length === 0 && (
-            <p className="text-center text-gray-500">
-              No journal entries yet. Create one!
-            </p>
-          )}
+          {!isLoading && entries.length === 0 && <p>No journal entries.</p>}
+
           <div className="space-y-6">
             {entries.map((entry) => (
               <div

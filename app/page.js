@@ -20,7 +20,7 @@ import AdminPage from "./admin/page";
 
 export default function MindMateApp() {
   const [currentPage, setCurrentPage] = useState("home");
-  const [currentUser, setCurrentUser] = useState(null);
+  const [currentUser, setCurrentUser] = useState(undefined);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authModalType, setAuthModalType] = useState("login");
@@ -46,7 +46,6 @@ export default function MindMateApp() {
 
   // --- Authentication ---
   const checkAuth = useCallback(async () => {
-    setIsAppLoading(true);
     const token = apiClient.getToken();
     const localUser = apiClient.getLoggedInUser(); // This now gets { _id, username, credits, role } if stored correctly
 
@@ -369,9 +368,8 @@ export default function MindMateApp() {
     fetchRecentActivities();
   }, [currentUser, moodDataVersion.current, journalDataVersion.current]); // Re-fetch if user or data changes
 
-  if (isAppLoading && currentUser === null) {
-    // Show full page loader only if no user yet (initial load)
-    // OR if (isAppLoading && !initialAuthCheckDone) using another state variable
+  if (currentUser === undefined) {
+    // Still checking initial auth status
     return (
       <Loader show={true} text="Initializing MindMate..." fullPage={true} />
     );
