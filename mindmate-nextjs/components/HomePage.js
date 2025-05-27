@@ -119,9 +119,7 @@ export default function HomePage({
           <h4 className="text-xl font-semibold text-gray-900 mb-4">
             Recent Activity
           </h4>
-          //{" "}
           <div id="recentActivityList" className="space-y-4">
-            //{" "}
             {recentActivities.length > 0 ? (
               recentActivities.map((activity) => (
                 <div
