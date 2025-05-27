@@ -161,12 +161,15 @@ export default function MindMateApp() {
 
   // --- Page Navigation & UI ---
   const handleShowPage = (pageId) => {
-    const protectedPages = ["chat", "mood-tracker", "journal"];
+    const protectedPages = ["chat", "mood-tracker", "journal", "admin"];
     if (protectedPages.includes(pageId) && !currentUser) {
       openLoginModal(
         "login",
         `Please login to access the ${pageId.replace("-", " ")} page.`
       );
+      if (protectedPages.includes(currentPage)) {
+        setCurrentPage("home"); // Default to home if current page was also protected
+      }
       return;
     }
     if (pageId === currentPage && pageId === "mood-tracker" && currentUser) {
@@ -179,7 +182,9 @@ export default function MindMateApp() {
     setIsMobileMenuOpen(false);
   };
 
-  const toggleMobileMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen);
+  const toggleMobileMenu = () => {
+    setIsMobileMenuOpen((prev) => !prev);
+  };
 
   // --- Mood Functionality (Example: selectMood on HomePage) ---
   const handleSelectMoodOnHome = async (mood) => {
@@ -370,9 +375,9 @@ export default function MindMateApp() {
       ></div>
 
       <div
-        className={`fixed top-0 left-0 h-full transition-transform duration-300 ease-in-out md:translate-x-0 ${
-          isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"
-        } z-40`}
+        className={`fixed top-0 left-0 h-full bg-white w-64 min-h-screen shadow-xl border-r border-gray-200 transition-transform duration-300 ease-in-out md:translate-x-0 ${
+          isMobileMenuOpen ? "translate-x-0 z-50" : "-translate-x-full z-40" // Ensure z-index changes
+        } md:z-40`}
       >
         <Sidebar
           onShowPage={handleShowPage}
@@ -383,11 +388,11 @@ export default function MindMateApp() {
 
       <div
         id="mainContentArea"
-        className={`transition-all duration-300 ease-in-out ${
-          isMobileMenuOpen && !isAuthModalOpen && "md:blur-none blur-sm"
-        } ${
-          isAuthModalOpen && "blur-sm pointer-events-none"
-        } md:ml-64 min-h-screen`}
+        className={`transition-all duration-300 ease-in-out md:ml-64 min-h-screen ${
+          isMobileMenuOpen && !isAuthModalOpen
+            ? "blur-sm md:blur-none pointer-events-none md:pointer-events-auto"
+            : ""
+        } ${isAuthModalOpen ? "blur-sm pointer-events-none" : ""}`}
       >
         <Header
           pageTitle={pageTitles[currentPage] || "MindMate"}

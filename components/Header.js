@@ -1,7 +1,6 @@
 // components/Header.js
 "use client";
 
-// Props: pageTitle, onMobileMenuToggle, username, credits, onLogout, onOpenLoginModal
 export default function Header({
   pageTitle,
   onMobileMenuToggle,
@@ -17,8 +16,10 @@ export default function Header({
         <div className="flex items-center gap-4">
           <button
             id="mobileMenuBtn"
-            onClick={onMobileMenuToggle}
-            className="md:hidden text-gray-600"
+            onClick={onMobileMenuToggle} // <<< CALL THE PASSED FUNCTION
+            className="md:hidden text-gray-600 hover:text-purple-600 focus:outline-none"
+            aria-label="Toggle menu" // Accessibility
+            aria-expanded={false} // This would need to be dynamic based on parent state if Header knew it
           >
             <i className="fas fa-bars text-xl"></i>
           </button>

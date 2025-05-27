@@ -1,34 +1,28 @@
 // components/Sidebar.js
-"use client"; // This component will have client-side interactions (button clicks)
+"use client";
+// import Link from 'next/link'; // If using Next.js router for admin page
+// import { usePathname } from 'next/navigation';
 
-import Link from "next/link"; // For navigation (optional, if you use Next.js routing for pages)
-// We'll need a way to manage current page state, possibly via context or props
-
-// Props might include: onShowPage (function to handle page changes), currentPage
 export default function Sidebar({ onShowPage, currentPage, currentUser }) {
-  // The original onclick="showPage('home')" etc. will be replaced.
-  // We'll pass a function from the parent component (e.g., the main page layout)
-  // or use Next.js Link components if these are actual routes.
-  // For now, let's assume onShowPage is a prop for SPA-like behavior within one Next.js page.
+  // const pathname = usePathname(); // For Next.js Link active state
 
-  const handleNavClick = (pageId) => {
-    if (onShowPage) {
-      onShowPage(pageId);
-    }
-  };
+  const navItems = [
+    { id: "home", icon: "fa-home", label: "Home" },
+    { id: "chat", icon: "fa-comments", label: "Chat" },
+    { id: "mood-tracker", icon: "fa-chart-line", label: "Mood Tracker" },
+    { id: "journal", icon: "fa-book", label: "Journal" },
+    { id: "resources", icon: "fa-heart", label: "Resources" },
+  ];
 
-  const handleAdminNav = () => {
-    // If /admin is a separate Next.js route handled by app/admin/page.js,
-    // you'd navigate using Next.js router here instead of onShowPage.
-    // For now, assuming onShowPage handles it:
-    onShowPage("admin");
-  };
+  // Conditionally add admin item
+  if (currentUser && currentUser.role === "admin") {
+    navItems.push({ id: "admin", icon: "fa-user-shield", label: "Admin" });
+  }
 
   return (
-    <div
-      id="sidebar"
-      className="sidebar bg-white w-64 min-h-screen shadow-xl border-r border-gray-200 fixed top-0 left-0 z-40 {/* Conditional class for mobile open state will be handled by parent state */}"
-    >
+    // The outer div in app/page.js handles the actual sliding and z-index
+    // This component just renders the content of the sidebar
+    <>
       <div className="p-6 border-b border-gray-200">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-indigo-600 rounded-xl flex items-center justify-center">
@@ -43,78 +37,41 @@ export default function Sidebar({ onShowPage, currentPage, currentUser }) {
 
       <nav className="p-4">
         <ul className="space-y-2">
-          {[
-            { id: "home", icon: "fa-home", label: "Home" },
-            { id: "chat", icon: "fa-comments", label: "Chat" },
-            {
-              id: "mood-tracker",
-              icon: "fa-chart-line",
-              label: "Mood Tracker",
-            },
-            { id: "journal", icon: "fa-book", label: "Journal" },
-            { id: "resources", icon: "fa-heart", label: "Resources" },
-          ].map((item) => (
+          {navItems.map((item) => (
             <li key={item.id}>
               <button
-                onClick={() => handleNavClick(item.id)}
-                className={`nav-btn w-full flex items-center gap-3 px-4 py-3 text-left rounded-lg hover:bg-gray-100 transition-colors ${
-                  currentPage === item.id ? "bg-purple-100 text-purple-700" : ""
+                onClick={() => onShowPage(item.id)} // onShowPage will close mobile menu
+                className={`nav-btn w-full flex items-center gap-3 px-4 py-3 text-left rounded-lg hover:bg-gray-100 focus:bg-gray-100 focus:outline-none transition-colors ${
+                  currentPage === item.id
+                    ? "bg-purple-100 text-purple-700"
+                    : "text-gray-700"
                 }`}
               >
                 <i
-                  className={`fas ${item.icon} text-gray-600 ${
-                    currentPage === item.id ? "text-purple-700" : ""
+                  className={`fas ${item.icon} w-5 text-center ${
+                    currentPage === item.id
+                      ? "text-purple-600"
+                      : "text-gray-600"
                   }`}
                 ></i>
-                <span
-                  className={`font-medium ${
-                    currentPage === item.id
-                      ? "text-purple-700"
-                      : "text-gray-700"
-                  }`}
-                >
-                  {item.label}
-                </span>
+                <span className={`font-medium`}>{item.label}</span>
               </button>
             </li>
           ))}
-
-          {currentUser && currentUser.role === "admin" && (
-            <li>
-              <button
-                onClick={handleAdminNav}
-                // Or use Next.js Link: <Link href="/admin"> ... </Link> if /admin is a separate route
-                className={`nav-btn w-full flex items-center gap-3 px-4 py-3 text-left rounded-lg hover:bg-gray-100 transition-colors ${
-                  currentPage === "admin" ? "bg-purple-100 text-purple-700" : ""
-                }`}
-              >
-                <i
-                  className={`fas fa-user-shield text-gray-600 ${
-                    currentPage === "admin" ? "text-purple-700" : ""
-                  }`}
-                ></i>
-                <span
-                  className={`font-medium ${
-                    currentPage === "admin"
-                      ? "text-purple-700"
-                      : "text-gray-700"
-                  }`}
-                >
-                  Admin
-                </span>
-              </button>
-            </li>
-          )}
         </ul>
       </nav>
 
       <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200">
         <div className="bg-blue-50 rounded-lg p-3">
           <p className="text-sm text-blue-800 font-medium">✨ Daily Streak</p>
-          <p className="text-xs text-blue-600">5 days of check-ins!</p>{" "}
-          {/* This will need to be dynamic */}
+          <p className="text-xs text-blue-600">
+            {/* This needs to be dynamic eventually */}
+            {currentUser?.dailyStreak
+              ? `${currentUser.dailyStreak} days`
+              : "Keep it up!"}
+          </p>
         </div>
       </div>
-    </div>
+    </>
   );
 }
