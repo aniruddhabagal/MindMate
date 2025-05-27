@@ -46,31 +46,63 @@ async function fetchWithAuth(url, options = {}) {
 
 // --- Authentication Functions ---
 export async function registerAPI(username, password) {
-  return fetchWithAuth(`${API_BASE_URL}/auth/register`, {
+  const data = await fetchWithAuth(`${API_BASE_URL}/auth/register`, {
+    // This also doesn't need a token yet
     method: "POST",
     body: JSON.stringify({ username, password }),
   });
-}
+  // Backend response 'data' should be: { _id, username, token, credits, message }
 
-export async function loginAPI(username, password) {
-  const data = await fetchWithAuth(`${API_BASE_URL}/auth/login`, {
-    method: "POST",
-    body: JSON.stringify({ username, password }),
-  });
-  // Store token and basic user info in localStorage upon successful login
   if (data && data.token && typeof window !== "undefined") {
+    // If registration auto-logs in the user, set token and user info
     localStorage.setItem("mindmateToken", data.token);
-    // Store user object which now includes credits from backend
     localStorage.setItem(
       "mindmateUser",
       JSON.stringify({
         _id: data._id,
         username: data.username,
-        credits: data.credits,
+        credits: data.credits, // Make sure credits are included
       })
     );
+    console.log(
+      "Token and user set in localStorage after registration:",
+      data.token,
+      data
+    ); // DEBUG
+  } else {
+    console.error("Register API response missing token or user data:", data); // DEBUG
   }
-  return data; // Return full data including user object and token
+  return data; // Return full data
+}
+
+export async function loginAPI(username, password) {
+  const data = await fetchWithAuth(`${API_BASE_URL}/auth/login`, {
+    // This fetchWithAuth call doesn't need a token yet
+    method: "POST",
+    body: JSON.stringify({ username, password }),
+  });
+  // Backend response 'data' should be: { _id, username, token, credits, message }
+
+  if (data && data.token && typeof window !== "undefined") {
+    localStorage.setItem("mindmateToken", data.token);
+    // Store the user object received from the backend, which includes credits
+    localStorage.setItem(
+      "mindmateUser",
+      JSON.stringify({
+        _id: data._id,
+        username: data.username,
+        credits: data.credits, // Make sure credits are included here
+      })
+    );
+    console.log(
+      "Token and user set in localStorage after login:",
+      data.token,
+      data
+    ); // DEBUG
+  } else {
+    console.error("Login API response missing token or user data:", data); // DEBUG
+  }
+  return data; // Return the full data object from backend
 }
 
 export async function logoutAPI() {

@@ -75,22 +75,55 @@ export default function MindMateApp() {
 
   // --- Authentication ---
   const checkAuth = useCallback(async () => {
-    const token = apiClient.getToken();
-    if (token) {
+    const token = apiClient.getToken(); // Gets token from localStorage
+    const localUser = apiClient.getLoggedInUser(); // Gets { _id, username, credits } from localStorage
+
+    if (token && localUser) {
+      // We have a token and some local user info.
+      // Set currentUser state for immediate UI update.
+      setCurrentUser(localUser);
+      console.log("Initial auth check: Found local token and user.", localUser); // DEBUG
+
+      // Optionally, verify with backend to get fresh data and validate token
       try {
-        const user = await apiClient.getCurrentUserAPI();
-        if (user) {
-          setCurrentUser(user);
+        const userFromServer = await apiClient.getCurrentUserAPI(); // Fetches fresh data from /auth/me
+        if (userFromServer) {
+          // Update currentUser state with fresh data from server (especially credits)
+          setCurrentUser(userFromServer);
+          // Update localStorage mindmateUser with fresh data from server
+          if (typeof window !== "undefined") {
+            localStorage.setItem(
+              "mindmateUser",
+              JSON.stringify({
+                _id: userFromServer._id,
+                username: userFromServer.username,
+                credits: userFromServer.credits,
+              })
+            );
+          }
+          console.log(
+            "Auth check: Token verified, user updated from server.",
+            userFromServer
+          ); // DEBUG
         } else {
-          await apiClient.logoutAPI();
+          // Token was invalid or user not found by server
+          console.warn(
+            "Auth check: Token invalid or user not found by server. Logging out."
+          ); // DEBUG
+          await apiClient.logoutAPI(); // Clears localStorage
           setCurrentUser(null);
         }
       } catch (error) {
-        console.error("Auth check failed, logging out:", error);
+        // This catch is if getCurrentUserAPI itself throws an unhandled error (not a 401 that it handles)
+        console.error("Auth check /auth/me call failed:", error); // DEBUG
         await apiClient.logoutAPI();
         setCurrentUser(null);
       }
     } else {
+      // No token or no local user info found
+      console.log(
+        "Initial auth check: No local token or user. User is logged out."
+      ); // DEBUG
       setCurrentUser(null);
     }
   }, []);
@@ -101,30 +134,62 @@ export default function MindMateApp() {
 
   const handleLogin = async (username, password) => {
     try {
-      const data = await apiClient.loginAPI(username, password);
-      setCurrentUser(data);
-      setIsAuthModalOpen(false);
-      setAuthError("");
-      moodDataVersion.current++; // Trigger mood data refresh
-      journalDataVersion.current++; // Trigger journal data refresh
-      // Chat history will be reset by ChatPage based on currentUser change
+      const backendResponse = await apiClient.loginAPI(username, password); // This now sets localStorage
+      // backendResponse contains { _id, username, token, credits, message }
+      if (backendResponse && backendResponse.token) {
+        // Set the currentUser state with the data from the backend (which now includes credits)
+        setCurrentUser({
+          _id: backendResponse._id,
+          username: backendResponse.username,
+          credits: backendResponse.credits,
+          // Do NOT store the token in the currentUser state object.
+          // The token is managed by apiClient.js via localStorage.
+        });
+        setIsAuthModalOpen(false);
+        setAuthError("");
+        moodDataVersion.current++;
+        journalDataVersion.current++;
+        // No need to manually set localStorage here, apiClient.loginAPI does it.
+        console.log("Login successful, currentUser state set:", currentUser); // DEBUG (will show previous state due to async nature of setState, check next render)
+      } else {
+        // This case should ideally be caught by an error thrown from loginAPI if token is missing
+        throw new Error(
+          backendResponse.message || "Login failed: No token received."
+        );
+      }
     } catch (error) {
+      console.error("handleLogin error:", error); // DEBUG
       setAuthError(error.message || "Login failed.");
-      throw error;
+      // throw error; // Only re-throw if AuthModal specifically needs to catch it again for its own UI
     }
   };
 
   const handleRegister = async (username, password) => {
     try {
-      const data = await apiClient.registerAPI(username, password);
-      setCurrentUser(data); // Auto-login
-      setIsAuthModalOpen(false);
-      setAuthError("");
-      moodDataVersion.current++;
-      journalDataVersion.current++;
+      const backendResponse = await apiClient.registerAPI(username, password); // This now sets localStorage
+      if (backendResponse && backendResponse.token) {
+        setCurrentUser({
+          _id: backendResponse._id,
+          username: backendResponse.username,
+          credits: backendResponse.credits,
+        });
+        setIsAuthModalOpen(false);
+        setAuthError("");
+        moodDataVersion.current++;
+        journalDataVersion.current++;
+        console.log(
+          "Registration successful, currentUser state set:",
+          currentUser
+        ); // DEBUG
+      } else {
+        throw new Error(
+          backendResponse.message || "Registration failed: No token received."
+        );
+      }
     } catch (error) {
+      console.error("handleRegister error:", error); // DEBUG
       setAuthError(error.message || "Registration failed.");
-      throw error;
+      // throw error;
     }
   };
 
