@@ -119,12 +119,18 @@
 .mindmate-loader-overlay {
   position: fixed;
   inset: 0;
-  background-color: rgba(249, 250, 251, 0.8); /* bg-gray-50 with opacity */
+  background-color: rgba(
+    240,
+    242,
+    245,
+    0.85
+  ); /* Slightly off-white, more opaque */
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 9999; /* Very high z-index */
-  backdrop-filter: blur(4px);
+  z-index: 9999;
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px); /* For Safari */
 }
 
 .mindmate-loader {
@@ -133,15 +139,12 @@
   align-items: center;
   justify-content: center;
   padding: 2rem;
-  /* background-color: white;
-  border-radius: 1rem;
-  box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04); */
 }
 
 .loader-brain-container {
   position: relative;
-  width: 100px; /* Adjust size as needed */
-  height: 100px;
+  width: 110px; /* Slightly larger */
+  height: 110px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -149,143 +152,172 @@
 }
 
 .loader-brain-icon {
-  font-size: 3.5rem; /* Adjust size */
-  color: #667eea; /* Tailwind indigo-500 */
-  animation: pulseBrain 2s infinite ease-in-out;
+  font-size: 3.8rem; /* Slightly larger */
+  /* Gradient color for the brain */
+  background: linear-gradient(
+    135deg,
+    #8b5cf6,
+    #6366f1
+  ); /* purple-500 to indigo-500 */
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  /* text-fill-color: transparent; */ /* Standard property, but -webkit- is more supported for gradient text */
+
+  animation: subtlePulseAndShine 2.5s infinite ease-in-out;
   z-index: 10;
+  filter: drop-shadow(0 0 8px rgba(102, 126, 234, 0.4)); /* indigo-500 glow */
 }
 
-@keyframes pulseBrain {
+@keyframes subtlePulseAndShine {
   0%,
   100% {
     transform: scale(1);
-    opacity: 1;
+    opacity: 0.9;
+    filter: drop-shadow(0 0 8px rgba(102, 126, 234, 0.4));
   }
   50% {
-    transform: scale(1.1);
-    opacity: 0.8;
+    transform: scale(1.08);
+    opacity: 1;
+    filter: drop-shadow(0 0 12px rgba(139, 92, 246, 0.6)); /* purple-500 glow */
   }
 }
 
-/* Wiring/Network Effect - Abstracted with dots */
+/* Wiring/Network Effect - More dynamic lines */
 .loader-wiring {
   position: absolute;
   width: 100%;
   height: 100%;
+  /* border: 1px dashed blue; */ /* For debugging positions */
 }
 
-.loader-wiring .dot {
+.loader-wiring .line {
   position: absolute;
-  background-color: #7c3aed; /* Tailwind purple-600 */
-  border-radius: 50%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    #a78bfa,
+    transparent
+  ); /* purple-400 */
+  border-radius: 2px;
+  transform-origin: center;
   opacity: 0;
-  animation: radiateDot 3s infinite ease-out;
+  animation: drawLine 3s infinite ease-out;
+}
+.loader-wiring .line.short {
+  height: 2px;
+  width: 20px;
+}
+.loader-wiring .line.medium {
+  height: 2px;
+  width: 30px;
+}
+.loader-wiring .line.long {
+  height: 2.5px;
+  width: 40px;
 }
 
-/* Define positions and delays for several dots */
-.loader-wiring .dot-1 {
-  width: 6px;
-  height: 6px;
-  top: 10%;
-  left: 45%;
+/* Positioning and rotation for lines to create a network effect */
+.loader-wiring .line-1 {
+  top: 50%;
+  left: -15%;
+  transform: translateY(-50%) rotate(30deg);
   animation-delay: 0s;
 }
-.loader-wiring .dot-2 {
-  width: 4px;
-  height: 4px;
-  top: 25%;
-  left: 75%;
+.loader-wiring .line-2 {
+  top: 10%;
+  left: 50%;
+  transform: translateX(-50%) rotate(90deg);
   animation-delay: 0.3s;
 }
-.loader-wiring .dot-3 {
-  width: 5px;
-  height: 5px;
-  top: 70%;
-  left: 80%;
+.loader-wiring .line-3 {
+  top: 50%;
+  right: -15%;
+  transform: translateY(-50%) rotate(-30deg);
   animation-delay: 0.6s;
 }
-.loader-wiring .dot-4 {
-  width: 6px;
-  height: 6px;
-  top: 80%;
-  left: 30%;
+.loader-wiring .line-4 {
+  bottom: 10%;
+  left: 50%;
+  transform: translateX(-50%) rotate(-90deg);
   animation-delay: 0.9s;
 }
-.loader-wiring .dot-5 {
-  width: 4px;
-  height: 4px;
-  top: 50%;
-  left: 10%;
+.loader-wiring .line-5 {
+  top: 20%;
+  left: 0%;
+  transform: rotate(60deg);
   animation-delay: 1.2s;
 }
-.loader-wiring .dot-6 {
-  width: 5px;
-  height: 5px;
-  top: 20%;
-  left: 20%;
+.loader-wiring .line-6 {
+  bottom: 20%;
+  right: 0%;
+  transform: rotate(60deg);
   animation-delay: 1.5s;
 }
+.loader-wiring .line-7 {
+  top: 75%;
+  left: 5%;
+  transform: rotate(-45deg);
+  animation-delay: 0.2s;
+}
+.loader-wiring .line-8 {
+  top: 25%;
+  right: 5%;
+  transform: rotate(135deg);
+  animation-delay: 0.7s;
+}
 
-@keyframes radiateDot {
+@keyframes drawLine {
   0% {
-    transform: scale(0.1) translate(0, 0);
+    width: 0;
     opacity: 0;
   }
+  10%,
   20% {
-    /* Appears */
-    transform: scale(1);
-    opacity: 0.8;
+    /* Line appears and draws */
+    opacity: 0.7;
+    width: var(--final-width, 30px); /* Use CSS variable for final width */
   }
-  80% {
-    /* Moves outwards and fades */
-    transform: scale(1.5) translate(calc(var(--tx, 0px)), calc(var(--ty, 0px)));
-    opacity: 0;
+  70% {
+    /* Line holds and starts to fade */
+    opacity: 0.5;
+    width: var(--final-width, 30px);
   }
+  90%,
   100% {
-    transform: scale(0.1) translate(0, 0);
+    /* Line fades and shrinks */
     opacity: 0;
+    width: 0;
   }
 }
 
-/* Specific translations for each dot to radiate outwards */
-.loader-wiring .dot-1 {
-  --tx: 0px;
-  --ty: -30px;
+/* Assign final widths to line classes (can also be done in JS if needed) */
+.loader-wiring .line.short {
+  --final-width: 25px;
 }
-.loader-wiring .dot-2 {
-  --tx: 25px;
-  --ty: -15px;
+.loader-wiring .line.medium {
+  --final-width: 40px;
 }
-.loader-wiring .dot-3 {
-  --tx: 20px;
-  --ty: 20px;
-}
-.loader-wiring .dot-4 {
-  --tx: -25px;
-  --ty: 15px;
-}
-.loader-wiring .dot-5 {
-  --tx: -30px;
-  --ty: 0px;
-}
-.loader-wiring .dot-6 {
-  --tx: -15px;
-  --ty: -20px;
+.loader-wiring .line.long {
+  --final-width: 55px;
 }
 
 .loader-text {
-  font-size: 1rem;
-  color: #4b5563; /* Tailwind gray-600 */
+  font-size: 1.05rem; /* Slightly larger */
+  color: #374151; /* Tailwind gray-700 */
   font-weight: 500;
-  margin-top: 0.5rem;
-  animation: pulseText 2s infinite ease-in-out alternate;
+  margin-top: 1rem; /* Spacing from animation */
+  animation: fadeInText 2.5s infinite ease-in-out alternate;
+  letter-spacing: 0.5px;
 }
 
-@keyframes pulseText {
+@keyframes fadeInText {
   from {
-    opacity: 0.7;
+    opacity: 0.6;
+    transform: translateY(2px);
   }
   to {
     opacity: 1;
+    transform: translateY(0);
   }
 }
