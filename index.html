@@ -13,7 +13,7 @@
 
 <body class="bg-gray-50 min-h-screen">
     <!-- Mobile Menu Overlay -->
-    <div id="mobileOverlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden md:hidden"></div>
+    <div id="mobileOverlay" class="fixed inset-0 bg-black bg-opacity-50 z-30 hidden md:hidden"></div>
 
     <!-- Sidebar -->
     <div id="sidebar" class="sidebar bg-white w-64 min-h-screen shadow-xl border-r border-gray-200">
@@ -79,7 +79,7 @@
     </div>
 
     <!-- Main Content -->
-    <div class="md:ml-64 min-h-screen">
+    <div id="mainContentArea" class="md:ml-64 min-h-screen">
         <!-- Header -->
         <header class="bg-white shadow-sm border-b border-gray-200 px-6 py-4">
             <div class="flex items-center justify-between">
@@ -114,7 +114,7 @@
 
         <!-- Auth Modals Container (Initially Hidden) -->
         <div id="authModalContainer"
-            class="fixed inset-0 bg-black bg-opacity-75 z-50 hidden flex items-center justify-center p-4">
+            class="fixed inset-0 bg-black bg-opacity-75 z-[60] hidden flex items-center justify-center p-4">
             <!-- Login Form -->
             <div id="loginFormContainer" class="bg-white p-8 rounded-lg shadow-xl w-full max-w-md hidden">
                 <h3 class="text-2xl font-bold mb-6 text-gray-800 text-center">Login to MindMate</h3>
@@ -752,7 +752,7 @@
 
     <!-- Breathing Exercise Modal -->
     <div id="breathingModal"
-        class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
+        class="fixed inset-0 bg-black bg-opacity-50 z-[55] hidden flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl p-8 max-w-md w-full text-center">
             <h3 class="text-2xl font-bold text-gray-900 mb-4">Breathing Exercise</h3>
             <div id="breathingCircle"

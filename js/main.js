@@ -87,6 +87,7 @@ function cacheDOMElements() {
   moodChartPeriodSelectEl = document.getElementById("moodChartPeriodSelect");
   welcomeHeader = document.querySelector("#home .text-3xl.font-bold");
   userCreditsDisplayEl = document.getElementById("userCreditsDisplay");
+  mainContentArea = document.getElementById("mainContentArea");
 }
 
 // --- Initialization ---
@@ -380,7 +381,7 @@ function setupEventListeners() {
 // --- Auth Modal Functions ---
 function openAuthModal(type = "login", message = "") {
   if (!authModalContainer) return;
-  const mainContentArea = document.querySelector(".md\\:ml-64"); // Main content area selector
+  // const mainContentArea = document.querySelector(".md\\:ml-64"); // Main content area selector
 
   authModalContainer.classList.remove("hidden");
   if (mainContentArea)
