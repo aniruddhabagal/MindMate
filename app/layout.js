@@ -18,7 +18,7 @@ export const metadata = {
     siteName: "MindMate",
     images: [
       {
-        url: "/mindmate_new.png", // 🔁 Place this image in /public
+        url: "/mindmate_new", // 🔁 Place this image in /public
         width: 1200,
         height: 630,
         alt: "MindMate preview",
