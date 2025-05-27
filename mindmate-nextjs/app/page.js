@@ -1,7 +1,7 @@
 // app/page.js
-"use client"; // This page will be interactive
+"use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Sidebar from "../components/Sidebar";
 import Header from "../components/Header";
 import HomePage from "../components/HomePage";
@@ -12,37 +12,56 @@ import ResourcesPage from "../components/ResourcesPage";
 import AuthModal from "../components/AuthModal";
 import BreathingModal from "../components/BreathingModal";
 
-// Import API functions - we'll refactor api.js later
-// For now, assume they are available or create a temporary wrapper
-import {
-  loginAPI,
-  registerAPI,
-  logoutAPI,
-  getCurrentUserAPI,
-  getLoggedInUser,
-  getToken,
-  callChatAPI,
-  getMoodScore,
-  logMoodAPI,
-  getMoodEntriesAPI,
-  getMoodChartDataAPI,
-  saveJournalAPI,
-  getJournalEntriesAPI,
-  getJournalEntryByIdAPI,
-  updateJournalEntryAPI,
-  deleteJournalEntryAPI,
-} from "../lib/apiClient"; // We'll create this wrapper
+// Import API functions
+import * as apiClient from "../lib/apiClient"; // Import all as apiClient
+
+// Utility function (can be in a separate utils/formatters.js file)
+export function formatDate(dateString, short = false) {
+  const date = new Date(dateString);
+  const today = new Date();
+  const yesterday = new Date(today);
+  yesterday.setDate(today.getDate() - 1);
+
+  if (short) {
+    return date.toLocaleDateString(undefined, {
+      month: "short",
+      day: "numeric",
+    });
+  }
+  if (date.toDateString() === today.toDateString()) {
+    return `Today, ${date.toLocaleTimeString(undefined, {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    })}`;
+  } else if (date.toDateString() === yesterday.toDateString()) {
+    return `Yesterday, ${date.toLocaleTimeString(undefined, {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    })}`;
+  } else {
+    return date.toLocaleDateString(undefined, {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  }
+}
 
 export default function MindMateApp() {
   const [currentPage, setCurrentPage] = useState("home");
   const [currentUser, setCurrentUser] = useState(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [authModalType, setAuthModalType] = useState("login"); // 'login' or 'register'
+  const [authModalType, setAuthModalType] = useState("login");
   const [authError, setAuthError] = useState("");
   const [isBreathingModalOpen, setIsBreathingModalOpen] = useState(false);
 
-  // Page titles (can be moved to a config file)
+  // Refs for data that might need to be force-refreshed in child components
+  const moodDataVersion = useRef(0); // Increment to trigger refetch in MoodTrackerPage
+  const journalDataVersion = useRef(0); // Increment to trigger refetch in JournalPage
+
   const pageTitles = {
     home: currentUser
       ? `Welcome, ${currentUser.username}!`
@@ -55,19 +74,19 @@ export default function MindMateApp() {
 
   // --- Authentication ---
   const checkAuth = useCallback(async () => {
-    const token = getToken(); // from apiClient (localStorage)
+    const token = apiClient.getToken();
     if (token) {
       try {
-        const user = await getCurrentUserAPI();
+        const user = await apiClient.getCurrentUserAPI();
         if (user) {
           setCurrentUser(user);
         } else {
-          await logoutAPI(); // Clear invalid token/user from localStorage
+          await apiClient.logoutAPI();
           setCurrentUser(null);
         }
       } catch (error) {
         console.error("Auth check failed, logging out:", error);
-        await logoutAPI();
+        await apiClient.logoutAPI();
         setCurrentUser(null);
       }
     } else {
@@ -81,22 +100,27 @@ export default function MindMateApp() {
 
   const handleLogin = async (username, password) => {
     try {
-      const data = await loginAPI(username, password);
-      setCurrentUser(data); // Includes token and user details
+      const data = await apiClient.loginAPI(username, password);
+      setCurrentUser(data);
       setIsAuthModalOpen(false);
-      // loadUserSpecificData(); // Call this to fetch data after login
+      setAuthError("");
+      moodDataVersion.current++; // Trigger mood data refresh
+      journalDataVersion.current++; // Trigger journal data refresh
+      // Chat history will be reset by ChatPage based on currentUser change
     } catch (error) {
       setAuthError(error.message || "Login failed.");
-      throw error; // Re-throw for AuthModal to handle its own error display
+      throw error;
     }
   };
 
   const handleRegister = async (username, password) => {
     try {
-      const data = await registerAPI(username, password);
-      setCurrentUser(data); // Auto-login after register
+      const data = await apiClient.registerAPI(username, password);
+      setCurrentUser(data); // Auto-login
       setIsAuthModalOpen(false);
-      // loadUserSpecificData();
+      setAuthError("");
+      moodDataVersion.current++;
+      journalDataVersion.current++;
     } catch (error) {
       setAuthError(error.message || "Registration failed.");
       throw error;
@@ -104,10 +128,12 @@ export default function MindMateApp() {
   };
 
   const handleLogout = async () => {
-    await logoutAPI();
+    await apiClient.logoutAPI();
     setCurrentUser(null);
-    setCurrentPage("home"); // Redirect to home after logout
-    // Clear any sensitive local state (e.g., chat history)
+    setCurrentPage("home");
+    moodDataVersion.current++; // To clear data in child components
+    journalDataVersion.current++;
+    // Chat history reset is handled in ChatPage via useEffect on currentUser
   };
 
   const openLoginModal = (type = "login", message = "") => {
@@ -126,27 +152,53 @@ export default function MindMateApp() {
       );
       return;
     }
+    if (pageId === currentPage && pageId === "mood-tracker" && currentUser) {
+      moodDataVersion.current++; // Force refresh if clicking current page
+    }
+    if (pageId === currentPage && pageId === "journal" && currentUser) {
+      journalDataVersion.current++;
+    }
     setCurrentPage(pageId);
-    setIsMobileMenuOpen(false); // Close mobile menu on page change
+    setIsMobileMenuOpen(false);
   };
 
   const toggleMobileMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen);
 
-  // --- Mood Functionality ---
-  const handleSelectMood = async (mood) => {
+  // --- Mood Functionality (Example: selectMood on HomePage) ---
+  const handleSelectMoodOnHome = async (mood) => {
     if (!currentUser) {
       openLoginModal("login", "Please login to log your mood.");
-      return;
+      return false; // Indicate failure
     }
-    const score = getMoodScore(mood); // From apiClient
+    const score = apiClient.getMoodScore(mood);
     try {
-      await logMoodAPI(mood, score);
-      alert(`Mood "${mood}" logged!`); // Replace with better notification
-      // Potentially refresh mood data here if MoodTrackerPage is active or data is shown on current page
-      // if (currentPage === 'mood-tracker') // fetch and re-render mood tracker data
+      await apiClient.logMoodAPI(mood, score);
+      alert(`Mood "${mood}" logged!`);
+      moodDataVersion.current++; // Trigger MoodTrackerPage to refetch
+      // Potentially update currentUser.credits if credits are affected
+      // const updatedUser = await apiClient.getCurrentUserAPI(); // One way to get fresh credits
+      // if (updatedUser) setCurrentUser(updatedUser);
+      return true;
     } catch (error) {
       console.error("Error logging mood:", error);
       alert("Could not log mood: " + error.message);
+      return false;
+    }
+  };
+
+  // --- Credit Update after Chat ---
+  // This function would be passed to ChatPage
+  const handleChatCreditDeduction = () => {
+    if (currentUser) {
+      setCurrentUser((prevUser) => ({
+        ...prevUser,
+        credits: Math.max(0, prevUser.credits - 1),
+      }));
+    }
+  };
+  const updateUserCredits = (newCreditCount) => {
+    if (currentUser && newCreditCount !== undefined) {
+      setCurrentUser((prevUser) => ({ ...prevUser, credits: newCreditCount }));
     }
   };
 
@@ -154,7 +206,41 @@ export default function MindMateApp() {
   const openBreathingExercise = () => setIsBreathingModalOpen(true);
   const closeBreathingExercise = () => setIsBreathingModalOpen(false);
 
-  // --- Render Page Content ---
+  // --- Keyboard Shortcuts ---
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key >= "1" && e.key <= "5") {
+        e.preventDefault();
+        const pages = ["home", "chat", "mood-tracker", "journal", "resources"];
+        const pageIndex = parseInt(e.key) - 1;
+        if (pages[pageIndex]) handleShowPage(pages[pageIndex]);
+      }
+      if (e.key === "Escape") {
+        if (isAuthModalOpen) setIsAuthModalOpen(false);
+        else if (isBreathingModalOpen) setIsBreathingModalOpen(false);
+        // else if (isJournalFormOpen) closeJournalForm(); // If journal form was a modal
+        else if (isMobileMenuOpen) setIsMobileMenuOpen(false);
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [isAuthModalOpen, isBreathingModalOpen, isMobileMenuOpen]); // Add dependencies
+
+  // --- Service Worker ---
+  useEffect(() => {
+    if ("serviceWorker" in navigator && process.env.NODE_ENV === "production") {
+      // Only in production
+      window.addEventListener("load", () => {
+        navigator.serviceWorker
+          .register("/sw.js") // Assuming sw.js is in public folder
+          .then((registration) => console.log("SW registered: ", registration))
+          .catch((registrationError) =>
+            console.log("SW registration failed: ", registrationError)
+          );
+      });
+    }
+  }, []);
+
   const renderPageContent = () => {
     switch (currentPage) {
       case "home":
@@ -163,48 +249,50 @@ export default function MindMateApp() {
             username={currentUser?.username}
             onShowPage={handleShowPage}
             onOpenBreathingExercise={openBreathingExercise}
-            onSelectMood={handleSelectMood}
+            onSelectMood={handleSelectMoodOnHome} // Pass the specific handler
+            isLoggedIn={!!currentUser}
           />
         );
       case "chat":
-        // Pass chat history, sendMessage handler etc.
-        return <ChatPage currentUser={currentUser} callChatAPI={callChatAPI} />;
+        return (
+          <ChatPage
+            currentUser={currentUser}
+            callChatAPI={apiClient.callChatAPI}
+            onChatCreditDeduction={handleChatCreditDeduction}
+            updateUserCredits={updateUserCredits}
+          />
+        );
       case "mood-tracker":
-        // Pass functions to fetch and display mood data
         return (
           <MoodTrackerPage
             currentUser={currentUser}
-            getMoodChartDataAPI={getMoodChartDataAPI}
-            getMoodEntriesAPI={getMoodEntriesAPI}
+            getMoodChartDataAPI={apiClient.getMoodChartDataAPI}
+            getMoodEntriesAPI={apiClient.getMoodEntriesAPI}
+            // formatDate={formatDate} // Or component imports it
+            moodDataVersion={moodDataVersion.current} // Pass the current value
           />
         );
       case "journal":
-        // Pass journal related functions and data
         return (
           <JournalPage
             currentUser={currentUser}
-            saveJournalAPI={saveJournalAPI}
-            getJournalEntriesAPI={getJournalEntriesAPI}
-            updateJournalEntryAPI={updateJournalEntryAPI}
-            deleteJournalEntryAPI={deleteJournalEntryAPI}
-            getJournalEntryByIdAPI={getJournalEntryByIdAPI}
+            apiClient={apiClient} // Pass the whole apiClient for convenience
+            formatDate={formatDate}
+            journalDataVersion={journalDataVersion.current}
           />
         );
       case "resources":
-        return <ResourcesPage openBreathingExercise={openBreathingExercise} />; // Pass any needed functions
+        return <ResourcesPage openBreathingExercise={openBreathingExercise} />;
       default:
         return (
           <HomePage
             username={currentUser?.username}
             onShowPage={handleShowPage}
-            onOpenBreathingExercise={openBreathingExercise}
-            onSelectMood={handleSelectMood}
           />
         );
     }
   };
 
-  // Main layout structure
   return (
     <>
       <div
@@ -224,8 +312,11 @@ export default function MindMateApp() {
       </div>
 
       <div
+        id="mainContentArea"
         className={`transition-all duration-300 ease-in-out ${
-          isMobileMenuOpen && "md:blur-none blur-sm"
+          isMobileMenuOpen && !isAuthModalOpen && "md:blur-none blur-sm"
+        } ${
+          isAuthModalOpen && "blur-sm pointer-events-none"
         } md:ml-64 min-h-screen`}
       >
         <Header
@@ -237,10 +328,15 @@ export default function MindMateApp() {
           onOpenLoginModal={() => openLoginModal("login")}
           isLoggedIn={!!currentUser}
         />
-        <main className="p-6">{renderPageContent()}</main>
+        <main className="p-6">
+          {currentUser === undefined ? (
+            <p>Loading user...</p>
+          ) : (
+            renderPageContent()
+          )}
+        </main>
       </div>
 
-      {/* Floating Chat Button - can be its own component */}
       {currentUser && (
         <button
           onClick={() => handleShowPage("chat")}
@@ -262,7 +358,6 @@ export default function MindMateApp() {
       <BreathingModal
         isOpen={isBreathingModalOpen}
         onClose={closeBreathingExercise}
-        // Pass startBreathing logic or manage state within BreathingModal
       />
     </>
   );

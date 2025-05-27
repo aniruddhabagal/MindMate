@@ -1,15 +1,16 @@
 // components/MoodTrackerPage.js
 "use client";
 import { useState, useEffect, useRef, useCallback } from "react";
-import Chart from "chart.js/auto"; // Import Chart.js
+import Chart from "chart.js/auto";
+import { formatDate as formatDateUtil, moodEmojis } from "../lib/formatters"; // Assuming formatters.js is in lib
 
-// Props: currentUser, getMoodChartDataAPI, getMoodEntriesAPI
+// Props: currentUser, getMoodChartDataAPI, getMoodEntriesAPI, moodDataVersion (to trigger refetch)
 export default function MoodTrackerPage({
   currentUser,
   getMoodChartDataAPI,
   getMoodEntriesAPI,
+  moodDataVersion,
 }) {
-  const [allMoodEntries, setAllMoodEntries] = useState([]);
   const [stats, setStats] = useState({
     streak: 0,
     thisWeekDominant: "N/A",
@@ -17,33 +18,12 @@ export default function MoodTrackerPage({
     avgMood: 0,
   });
   const [recentEntries, setRecentEntries] = useState([]);
-  const chartRef = useRef(null); // For the canvas element
-  const chartInstanceRef = useRef(null); // To store the Chart instance
+  const [isLoading, setIsLoading] = useState(true); // For overall page data
+  const chartRef = useRef(null);
+  const chartInstanceRef = useRef(null);
   const [selectedChartDays, setSelectedChartDays] = useState(7);
 
-  const moodEmoji = {
-    happy: "😊",
-    sad: "😢",
-    anxious: "😰",
-    calm: "😌",
-    stressed: "😵",
-    default: "😐",
-  };
-  const formatDateForDisplay = (dateString, short = false) => {
-    const date = new Date(dateString);
-    if (short)
-      return date.toLocaleDateString(undefined, {
-        month: "short",
-        day: "numeric",
-      });
-    return date.toLocaleDateString(undefined, {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
-  };
-
-  const calculateStats = useCallback((entries) => {
+  const calculateAndSetStats = useCallback((entries) => {
     if (!entries || entries.length === 0) {
       setStats({ streak: 0, thisWeekDominant: "N/A", total: 0, avgMood: 0 });
       setRecentEntries([]);
@@ -66,16 +46,15 @@ export default function MoodTrackerPage({
       let expectedDate = new Date(todayForStreak);
       const firstEntryDate = new Date(sortedEntries[0].entryDate);
       firstEntryDate.setHours(0, 0, 0, 0);
+
       if (
         firstEntryDate.getTime() === todayForStreak.getTime() ||
         firstEntryDate.getTime() ===
-          new Date(new Date().setDate(new Date().getDate() - 1)).setHours(
-            0,
-            0,
-            0,
-            0
-          )
+          new Date(
+            new Date(todayForStreak).setDate(todayForStreak.getDate() - 1)
+          ).getTime()
       ) {
+        // Corrected yesterday check
         currentStreak = 1;
         expectedDate = new Date(firstEntryDate);
         expectedDate.setDate(expectedDate.getDate() - 1);
@@ -117,96 +96,125 @@ export default function MoodTrackerPage({
     });
   }, []);
 
-  const fetchAllMoodData = useCallback(async () => {
-    if (!currentUser || !getMoodEntriesAPI) return;
-    try {
-      const entries = await getMoodEntriesAPI();
-      setAllMoodEntries(entries);
-      calculateStats(entries);
-    } catch (error) {
-      console.error("Failed to fetch all mood entries:", error);
-      setAllMoodEntries([]);
-      calculateStats([]);
-    }
-  }, [currentUser, getMoodEntriesAPI, calculateStats]);
-
-  useEffect(() => {
-    fetchAllMoodData();
-  }, [fetchAllMoodData, currentUser]); // Refetch when currentUser changes (login/logout)
-
-  const renderChart = useCallback(
+  const fetchMoodDataAndRenderChart = useCallback(
     async (days) => {
-      if (!currentUser || !chartRef.current || !getMoodChartDataAPI) {
+      if (!currentUser || !getMoodEntriesAPI || !getMoodChartDataAPI) {
+        setIsLoading(false);
+        // Clear chart if user logs out or API functions are not available
         if (chartInstanceRef.current) {
           chartInstanceRef.current.destroy();
           chartInstanceRef.current = null;
         }
+        calculateAndSetStats([]); // Clear stats
         return;
       }
+
+      setIsLoading(true);
       try {
-        const chartDataAPI = await getMoodChartDataAPI(days);
-        const labels = chartDataAPI.map((entry) =>
-          formatDateForDisplay(entry.entryDate, true)
+        const [allEntries, chartAPIData] = await Promise.all([
+          getMoodEntriesAPI(),
+          getMoodChartDataAPI(days),
+        ]);
+
+        calculateAndSetStats(allEntries);
+
+        const labels = chartAPIData.map((entry) =>
+          formatDateUtil(entry.entryDate, true)
         );
-        const dataPoints = chartDataAPI.map((entry) => entry.score);
+        const dataPoints = chartAPIData.map((entry) => entry.score);
 
         if (chartInstanceRef.current) {
           chartInstanceRef.current.destroy();
         }
-
-        chartInstanceRef.current = new Chart(
-          chartRef.current.getContext("2d"),
-          {
-            type: "line",
-            data: {
-              labels: dataPoints.length > 0 ? labels : ["No Data"],
-              datasets: [
-                {
-                  label: "Mood Score",
-                  data: dataPoints.length > 0 ? dataPoints : [],
-                  borderColor: "#667eea",
-                  backgroundColor: "rgba(102, 126, 234, 0.1)",
-                  borderWidth: 3,
-                  fill: true,
-                  tension: 0.4,
-                  pointBackgroundColor: "#667eea",
-                  pointBorderColor: "#fff",
-                  pointBorderWidth: 2,
-                  pointRadius: 6,
-                },
-              ],
-            },
-            options: {
-              responsive: true,
-              maintainAspectRatio: false,
-              plugins: {
-                legend: { display: false },
-                tooltip: { enabled: dataPoints.length > 0 },
+        if (chartRef.current) {
+          // Ensure canvas ref is available
+          chartInstanceRef.current = new Chart(
+            chartRef.current.getContext("2d"),
+            {
+              type: "line",
+              data: {
+                labels: dataPoints.length > 0 ? labels : ["No Data"],
+                datasets: [
+                  {
+                    label: "Mood Score",
+                    data: dataPoints.length > 0 ? dataPoints : [],
+                    borderColor: "#667eea",
+                    backgroundColor: "rgba(102, 126, 234, 0.1)",
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.4,
+                    pointBackgroundColor: "#667eea",
+                    pointBorderColor: "#fff",
+                    pointBorderWidth: 2,
+                    pointRadius: 6,
+                  },
+                ],
               },
-              scales: { y: { beginAtZero: true, max: 10 }, x: {} },
-            },
-          }
-        );
+              options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                  legend: { display: false },
+                  tooltip: { enabled: dataPoints.length > 0 },
+                },
+                scales: { y: { beginAtZero: true, max: 10 }, x: {} },
+              },
+            }
+          );
+        }
       } catch (error) {
-        console.error("Failed to render mood chart:", error);
+        console.error("Failed to fetch mood data or render chart:", error);
+        setStats({
+          streak: 0,
+          thisWeekDominant: "Error",
+          total: 0,
+          avgMood: 0,
+        }); // Indicate error in stats
+        setRecentEntries([]);
+        if (chartInstanceRef.current) {
+          chartInstanceRef.current.destroy();
+          chartInstanceRef.current = null;
+        }
+      } finally {
+        setIsLoading(false);
       }
     },
-    [currentUser, getMoodChartDataAPI, formatDateForDisplay]
+    [
+      currentUser,
+      getMoodEntriesAPI,
+      getMoodChartDataAPI,
+      calculateAndSetStats,
+      formatDateUtil,
+    ]
   );
 
   useEffect(() => {
-    renderChart(selectedChartDays);
-  }, [renderChart, selectedChartDays, allMoodEntries]); // Rerender chart if entries change too
+    fetchMoodDataAndRenderChart(selectedChartDays);
+  }, [
+    currentUser,
+    moodDataVersion,
+    selectedChartDays,
+    fetchMoodDataAndRenderChart,
+  ]); // moodDataVersion from parent triggers refetch
 
   const handlePeriodChange = (e) => {
     setSelectedChartDays(parseInt(e.target.value));
   };
 
-  if (!currentUser) {
+  if (!currentUser && !isLoading) {
+    // Show login prompt only after initial loading attempt if no user
     return (
-      <div className="flex flex-col items-center justify-center h-full text-gray-500">
-        <i className="fas fa-chart-line text-4xl mb-4"></i>
+      <div className="flex flex-col items-center justify-center h-full text-gray-500 py-10">
+        <i className="fas fa-chart-line text-4xl mb-4 text-purple-400"></i>
         <p>Please login to view your mood tracker.</p>
+      </div>
+    );
+  }
+  if (isLoading && stats.total === 0) {
+    // Show loading state if no data has been set yet
+    return (
+      <div className="text-center py-10 text-gray-500">
+        Loading mood data...
       </div>
     );
   }
@@ -216,7 +224,6 @@ export default function MoodTrackerPage({
       <div className="max-w-6xl mx-auto">
         {/* Stats Cards */}
         <div className="grid md:grid-cols-4 gap-6 mb-8">
-          {/* Current Streak */}
           <div className="bg-white rounded-2xl shadow-lg p-6">
             <div className="flex items-center justify-between">
               <div>
@@ -230,7 +237,6 @@ export default function MoodTrackerPage({
               </div>
             </div>
           </div>
-          {/* This Week */}
           <div className="bg-white rounded-2xl shadow-lg p-6">
             <div className="flex items-center justify-between">
               <div>
@@ -244,7 +250,6 @@ export default function MoodTrackerPage({
               </div>
             </div>
           </div>
-          {/* Total Entries */}
           <div className="bg-white rounded-2xl shadow-lg p-6">
             <div className="flex items-center justify-between">
               <div>
@@ -258,7 +263,6 @@ export default function MoodTrackerPage({
               </div>
             </div>
           </div>
-          {/* Avg. Mood */}
           <div className="bg-white rounded-2xl shadow-lg p-6">
             <div className="flex items-center justify-between">
               <div>
@@ -290,7 +294,8 @@ export default function MoodTrackerPage({
             </select>
           </div>
           <div className="relative h-64 sm:h-72 md:h-80">
-            <canvas ref={chartRef} id="moodChart"></canvas>
+            <canvas ref={chartRef} id="moodChartCanvasInternal"></canvas>{" "}
+            {/* Changed ID to avoid conflict with prop if any */}
           </div>
         </div>
 
@@ -300,43 +305,47 @@ export default function MoodTrackerPage({
             Recent Entries
           </h3>
           <div id="recentMoodEntriesList" className="space-y-4">
-            {recentEntries.length > 0 ? (
-              recentEntries.map((entry) => (
-                <div
-                  key={entry._id}
-                  className="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
-                >
-                  <div className="flex items-center gap-4">
-                    <span className="text-2xl">
-                      {moodEmoji[entry.mood.toLowerCase()] || moodEmoji.default}
-                    </span>
-                    <div>
-                      <p className="font-medium text-gray-900 capitalize">
-                        {entry.mood}
-                      </p>
-                      <p className="text-sm text-gray-600">
-                        {formatDateForDisplay(entry.entryDate)}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-lg font-semibold text-gray-900">
-                      {entry.score}/10
+            {isLoading && recentEntries.length === 0 && (
+              <p className="text-center text-gray-500">Loading entries...</p>
+            )}
+            {!isLoading && recentEntries.length === 0 && (
+              <p className="text-center text-gray-500">
+                No recent mood entries logged.
+              </p>
+            )}
+            {recentEntries.map((entry) => (
+              <div
+                key={entry._id}
+                className="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
+              >
+                <div className="flex items-center gap-4">
+                  <span className="text-2xl">
+                    {moodEmojis[entry.mood.toLowerCase()] || moodEmojis.default}
+                  </span>
+                  <div>
+                    <p className="font-medium text-gray-900 capitalize">
+                      {entry.mood}
                     </p>
-                    {entry.notes && (
-                      <p
-                        className="text-xs text-gray-500 truncate w-24"
-                        title={entry.notes}
-                      >
-                        {entry.notes}
-                      </p>
-                    )}
+                    <p className="text-sm text-gray-600">
+                      {formatDateUtil(entry.entryDate)}
+                    </p>
                   </div>
                 </div>
-              ))
-            ) : (
-              <p className="text-center text-gray-500">No recent entries.</p>
-            )}
+                <div className="text-right">
+                  <p className="text-lg font-semibold text-gray-900">
+                    {entry.score}/10
+                  </p>
+                  {entry.notes && (
+                    <p
+                      className="text-xs text-gray-500 truncate w-24 hover:whitespace-normal hover:overflow-visible"
+                      title={entry.notes}
+                    >
+                      {entry.notes}
+                    </p>
+                  )}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </div>

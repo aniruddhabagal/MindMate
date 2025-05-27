@@ -1,67 +1,61 @@
 // components/JournalPage.js
 "use client";
 import { useState, useEffect, useCallback } from "react";
+import { formatDate as formatDateUtil, getMoodColor } from "../lib/formatters"; // Assuming formatters.js is in lib
 
-// Props: currentUser, saveJournalAPI, getJournalEntriesAPI, updateJournalEntryAPI, deleteJournalEntryAPI, getJournalEntryByIdAPI
+// Props: currentUser, apiClient (object with all API functions), journalDataVersion
 export default function JournalPage({
   currentUser,
-  saveJournalAPI,
-  getJournalEntriesAPI,
-  updateJournalEntryAPI,
-  deleteJournalEntryAPI,
-  getJournalEntryByIdAPI,
+  apiClient,
+  journalDataVersion,
 }) {
   const [entries, setEntries] = useState([]);
   const [isFormVisible, setIsFormVisible] = useState(false);
-  const [editingEntry, setEditingEntry] = useState(null); // Stores full entry object or null
+  const [editingEntry, setEditingEntry] = useState(null); // Stores full entry object for editing
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true); // For fetching entries
+  const [isSaving, setIsSaving] = useState(false); // For save/update operation
 
-  const moodColor = (mood) =>
-    ({
-      happy: "green",
-      sad: "blue",
-      anxious: "yellow",
-      calm: "indigo",
-      stressed: "red",
-    }[mood?.toLowerCase()] || "purple");
-  const formatDateForDisplay = (dateString) =>
-    new Date(dateString).toLocaleDateString(undefined, {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "numeric",
-      minute: "2-digit",
-    });
+  const journalPromptsList = [
+    { text: "What made you smile today?", icon: "💙" },
+    { text: "What challenge did you overcome?", icon: "🌱" },
+    { text: "What are you grateful for?", icon: "🙏" },
+    { text: "How did you take care of yourself today?", icon: "✨" },
+  ];
 
   const fetchEntries = useCallback(async () => {
-    if (!currentUser || !getJournalEntriesAPI) return;
+    if (!currentUser || !apiClient?.getJournalEntriesAPI) return;
     setIsLoading(true);
     try {
-      const fetchedEntries = await getJournalEntriesAPI();
+      const fetchedEntries = await apiClient.getJournalEntriesAPI();
       setEntries(fetchedEntries);
     } catch (error) {
       console.error("Failed to fetch journal entries:", error);
-      alert("Error fetching entries: " + error.message);
+      // Consider setting an error state to display to the user
     } finally {
       setIsLoading(false);
     }
-  }, [currentUser, getJournalEntriesAPI]);
+  }, [currentUser, apiClient]);
 
   useEffect(() => {
     fetchEntries();
-  }, [fetchEntries]);
+  }, [fetchEntries, journalDataVersion]); // journalDataVersion from parent triggers refetch
 
   const handleNewEntryClick = () => {
     setEditingEntry(null);
     setTitle("");
     setContent("");
     setIsFormVisible(true);
+    // Scroll to form if needed, after it becomes visible
+    setTimeout(() => {
+      const formEl = document.getElementById("journalEntryFormElement"); // Add this ID to your form div
+      formEl?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 0);
   };
 
   const handleUsePrompt = (promptText) => {
-    handleNewEntryClick(); // Opens form and clears fields
+    handleNewEntryClick();
     setContent(`${promptText}\n\n`);
   };
 
@@ -77,7 +71,8 @@ export default function JournalPage({
       alert("Please write something in your journal entry.");
       return;
     }
-    setIsLoading(true);
+    if (!apiClient) return;
+    setIsSaving(true);
     const entryData = {
       title: title.trim() || "Untitled Entry",
       content: content.trim(),
@@ -85,69 +80,66 @@ export default function JournalPage({
 
     try {
       if (editingEntry && editingEntry._id) {
-        await updateJournalEntryAPI(editingEntry._id, entryData);
+        await apiClient.updateJournalEntryAPI(editingEntry._id, entryData);
         alert("Journal entry updated!");
       } else {
-        await saveJournalAPI(entryData.title, entryData.content);
+        await apiClient.saveJournalAPI(entryData.title, entryData.content);
         alert("Journal entry saved!");
       }
-      handleCancel(); // Close form
+      handleCancel();
       fetchEntries(); // Refresh list
     } catch (error) {
       console.error("Error saving journal entry:", error);
-      alert("Error saving entry: " + error.message);
+      alert("Error saving entry: " + (error.data?.message || error.message));
     } finally {
-      setIsLoading(false);
+      setIsSaving(false);
     }
   };
 
   const handleEditClick = async (entryId) => {
-    if (!getJournalEntryByIdAPI) return;
-    setIsLoading(true);
+    if (!apiClient?.getJournalEntryByIdAPI) return;
+    setIsLoading(true); // Use general loading or specific edit-loading state
     try {
-      const entryToEdit = await getJournalEntryByIdAPI(entryId);
+      const entryToEdit = await apiClient.getJournalEntryByIdAPI(entryId);
       setEditingEntry(entryToEdit);
       setTitle(entryToEdit.title);
       setContent(entryToEdit.content);
       setIsFormVisible(true);
-      // Scroll to form
-      const formEl = document.getElementById("journalForm");
-      formEl?.scrollIntoView({ behavior: "smooth", block: "center" });
+      setTimeout(() => {
+        const formEl = document.getElementById("journalEntryFormElement");
+        formEl?.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 0);
     } catch (error) {
       console.error("Error fetching entry for edit:", error);
-      alert("Error fetching entry: " + error.message);
+      alert("Error fetching entry: " + (error.data?.message || error.message));
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleDeleteClick = async (entryId) => {
+    if (!apiClient?.deleteJournalEntryAPI) return;
     if (window.confirm("Are you sure you want to delete this journal entry?")) {
-      setIsLoading(true);
+      setIsSaving(true); // Indicate an operation is in progress
       try {
-        await deleteJournalEntryAPI(entryId);
+        await apiClient.deleteJournalEntryAPI(entryId);
         alert("Journal entry deleted.");
-        fetchEntries(); // Refresh list
+        fetchEntries();
       } catch (error) {
         console.error("Error deleting journal entry:", error);
-        alert("Error deleting entry: " + error.message);
+        alert(
+          "Error deleting entry: " + (error.data?.message || error.message)
+        );
       } finally {
-        setIsLoading(false);
+        setIsSaving(false);
       }
     }
   };
 
-  const journalPrompts = [
-    { text: "What made you smile today?", color: "blue" },
-    { text: "What challenge did you overcome?", color: "green" },
-    { text: "What are you grateful for?", color: "purple" },
-    { text: "How did you take care of yourself today?", color: "yellow" },
-  ];
-
-  if (!currentUser) {
+  if (!currentUser && !isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center h-full text-gray-500">
-        <i className="fas fa-book text-4xl mb-4"></i>
+      <div className="flex flex-col items-center justify-center h-full text-gray-500 py-10">
+        <i className="fas fa-book text-4xl mb-4 text-purple-400"></i>
         <p>Please login to access your journal.</p>
       </div>
     );
@@ -156,7 +148,6 @@ export default function JournalPage({
   return (
     <div id="journal" className="page active">
       <div className="max-w-4xl mx-auto">
-        {/* Header */}
         <div className="bg-white rounded-2xl shadow-lg p-6 mb-8">
           <div className="flex items-center justify-between">
             <div>
@@ -167,60 +158,62 @@ export default function JournalPage({
             </div>
             <button
               onClick={handleNewEntryClick}
-              className="bg-gradient-to-r from-purple-500 to-indigo-600 text-white px-6 py-3 rounded-xl hover:shadow-lg transition-all"
+              disabled={isLoading || isSaving}
+              className="bg-gradient-to-r from-purple-500 to-indigo-600 text-white px-6 py-3 rounded-xl hover:shadow-lg transition-all disabled:opacity-70"
             >
               <i className="fas fa-plus mr-2"></i>New Entry
             </button>
           </div>
         </div>
 
-        {/* Prompts */}
         <div className="bg-white rounded-2xl shadow-lg p-6 mb-8">
           <h4 className="text-lg font-semibold text-gray-900 mb-4">
             Daily Prompts
           </h4>
           <div className="grid md:grid-cols-2 gap-4">
-            {journalPrompts.map((prompt) => (
+            {journalPromptsList.map((prompt) => (
               <div
                 key={prompt.text}
                 onClick={() => handleUsePrompt(prompt.text)}
-                className={`p-4 bg-${prompt.color}-50 rounded-lg cursor-pointer hover:bg-${prompt.color}-100 transition-colors`}
+                className={`p-4 bg-${getMoodColor(
+                  prompt.icon
+                )}-50 rounded-lg cursor-pointer hover:bg-${getMoodColor(
+                  prompt.icon
+                )}-100 transition-colors`}
               >
-                <p className={`text-${prompt.color}-800 font-medium`}>
-                  {prompt.text.includes("smile")
-                    ? "💙"
-                    : prompt.text.includes("challenge")
-                    ? "🌱"
-                    : prompt.text.includes("grateful")
-                    ? "🙏"
-                    : "✨"}{" "}
-                  {prompt.text}
+                <p
+                  className={`text-${getMoodColor(
+                    prompt.icon
+                  )}-800 font-medium`}
+                >
+                  {prompt.icon} {prompt.text}
                 </p>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Form */}
         {isFormVisible && (
           <div
-            id="journalForm"
+            id="journalEntryFormElement"
             className="bg-white rounded-2xl shadow-lg p-6 mb-8"
           >
+            {" "}
+            {/* Added ID here */}
             <h4 className="text-lg font-semibold text-gray-900 mb-4">
               {editingEntry ? "Edit Journal Entry" : "New Journal Entry"}
             </h4>
             <div className="space-y-4">
               <div>
                 <label
-                  htmlFor="journalTitleInput"
+                  htmlFor="journalTitleInputForm"
                   className="block text-sm font-medium text-gray-700 mb-2"
                 >
                   Title (optional)
                 </label>
                 <input
                   type="text"
-                  id="journalTitleInput"
+                  id="journalTitleInputForm"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
@@ -228,13 +221,13 @@ export default function JournalPage({
               </div>
               <div>
                 <label
-                  htmlFor="journalContentInput"
+                  htmlFor="journalContentInputForm"
                   className="block text-sm font-medium text-gray-700 mb-2"
                 >
                   Your thoughts
                 </label>
                 <textarea
-                  id="journalContentInput"
+                  id="journalContentInputForm"
                   value={content}
                   onChange={(e) => setContent(e.target.value)}
                   rows="8"
@@ -245,10 +238,10 @@ export default function JournalPage({
               <div className="flex gap-4">
                 <button
                   onClick={handleSave}
-                  disabled={isLoading}
+                  disabled={isSaving}
                   className="bg-gradient-to-r from-purple-500 to-indigo-600 text-white px-6 py-2 rounded-lg hover:shadow-lg transition-all disabled:opacity-50"
                 >
-                  {isLoading ? (
+                  {isSaving ? (
                     <>
                       <i className="fas fa-spinner fa-spin mr-2"></i>Saving...
                     </>
@@ -260,7 +253,8 @@ export default function JournalPage({
                 </button>
                 <button
                   onClick={handleCancel}
-                  className="border border-gray-300 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-50 transition-all"
+                  disabled={isSaving}
+                  className="border border-gray-300 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-50 transition-all disabled:opacity-70"
                 >
                   Cancel
                 </button>
@@ -269,7 +263,6 @@ export default function JournalPage({
           </div>
         )}
 
-        {/* Entries */}
         <div className="bg-white rounded-2xl shadow-lg p-6">
           <h4 className="text-lg font-semibold text-gray-900 mb-6">
             Recent Entries
@@ -282,18 +275,18 @@ export default function JournalPage({
               No journal entries yet. Create one!
             </p>
           )}
-          <div className="space-y-6" id="journalEntriesList">
+          <div className="space-y-6">
             {entries.map((entry) => (
               <div
                 key={entry._id}
-                className={`border-l-4 border-${moodColor(
+                className={`border-l-4 border-${getMoodColor(
                   entry.associatedMood
                 )}-500 pl-6 py-4`}
               >
                 <div className="flex items-center justify-between mb-2">
                   <h5 className="font-medium text-gray-900">{entry.title}</h5>
                   <span className="text-sm text-gray-500">
-                    {formatDateForDisplay(entry.entryDate)}
+                    {formatDateUtil(entry.entryDate)}
                   </span>
                 </div>
                 <p className="text-gray-700 text-sm leading-relaxed whitespace-pre-wrap">
@@ -303,13 +296,15 @@ export default function JournalPage({
                 <div className="flex items-center gap-4 mt-3">
                   <button
                     onClick={() => handleEditClick(entry._id)}
-                    className="text-gray-500 hover:text-gray-700 text-sm"
+                    disabled={isSaving || isLoading}
+                    className="text-gray-500 hover:text-gray-700 text-sm disabled:opacity-50"
                   >
                     <i className="fas fa-edit mr-1"></i>Edit
                   </button>
                   <button
                     onClick={() => handleDeleteClick(entry._id)}
-                    className="text-red-500 hover:text-red-700 text-sm"
+                    disabled={isSaving || isLoading}
+                    className="text-red-500 hover:text-red-700 text-sm disabled:opacity-50"
                   >
                     <i className="fas fa-trash mr-1"></i>Delete
                   </button>
