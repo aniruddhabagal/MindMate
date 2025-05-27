@@ -1,7 +1,7 @@
 // lib/apiClient.js or utils/apiClient.js
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000/api";
+const API_BASE_URL = "/api"; // Calls will be relative to the current domain
+
 
 // --- Helper Function for Authenticated Requests ---
 async function fetchWithAuth(url, options = {}) {
