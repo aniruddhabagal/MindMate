@@ -1,102 +1,268 @@
 // components/ChatPage.js
 "use client";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { formatDate, moodEmojis } from "../lib/formatters"; // Assuming formatters.js
 
-// Props: currentUser, callChatAPI, onChatCreditDeduction (to update parent's currentUser), updateUserCredits
+// Props: currentUser, apiClient, onChatCreditDeduction, updateUserCredits
 export default function ChatPage({
   currentUser,
-  callChatAPI,
+  apiClient,
   onChatCreditDeduction,
   updateUserCredits,
 }) {
-  const [messages, setMessages] = useState([]);
+  const [sessions, setSessions] = useState([]);
+  const [activeSessionId, setActiveSessionId] = useState(null);
+  const [currentMessages, setCurrentMessages] = useState([]); // For the active session
   const [inputValue, setInputValue] = useState("");
-  const [isTyping, setIsTyping] = useState(false); // API loading state
+
+  const [isLoadingSessions, setIsLoadingSessions] = useState(false);
+  const [isLoadingMessages, setIsLoadingMessages] = useState(false);
+  const [isSendingMessage, setIsSendingMessage] = useState(false); // For Gemini response when sending message
+  const [isCreatingSession, setIsCreatingSession] = useState(false); // For new session creation
+
   const chatMessagesEndRef = useRef(null);
   const inputRef = useRef(null);
 
-  const scrollToBottom = () => {
-    chatMessagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
+  const scrollToBottom = () =>
+    chatMessagesEndRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "end",
+    });
+  useEffect(scrollToBottom, [currentMessages]);
 
-  useEffect(scrollToBottom, [messages]);
+  // Fetch user's chat sessions
+  const fetchSessions = useCallback(async () => {
+    if (!currentUser || !apiClient?.getChatSessionsAPI) {
+      setSessions([]);
+      return;
+    }
+    setIsLoadingSessions(true);
+    try {
+      const fetchedSessions = await apiClient.getChatSessionsAPI();
+      setSessions(fetchedSessions || []);
+      // If no active session but sessions exist, and not currently loading messages for another, select the first one.
+      if (
+        !activeSessionId &&
+        fetchedSessions &&
+        fetchedSessions.length > 0 &&
+        !isLoadingMessages
+      ) {
+        setActiveSessionId(fetchedSessions[0]._id);
+      } else if (fetchedSessions.length === 0) {
+        setActiveSessionId(null); // No sessions, no active session
+        setCurrentMessages([
+          {
+            sender: "bot",
+            text: "Start a new chat or select an existing one from the panel!",
+          },
+        ]);
+      }
+    } catch (error) {
+      console.error("Error fetching chat sessions:", error);
+      setSessions([]); // Clear sessions on error
+      // Display error to user?
+    } finally {
+      setIsLoadingSessions(false);
+    }
+  }, [currentUser, apiClient, activeSessionId, isLoadingMessages]); // Added activeSessionId & isLoadingMessages to dep array for initial load logic
 
   useEffect(() => {
-    if (currentUser && messages.length === 0) {
-      setMessages([
-        {
-          sender: "bot",
-          text: "Hello! I'm MindMate. How are you feeling today? 😊",
-        },
+    if (currentUser) {
+      // Only fetch sessions if a user is logged in
+      fetchSessions();
+    } else {
+      // User logged out
+      setSessions([]);
+      setActiveSessionId(null);
+      setCurrentMessages([]);
+    }
+  }, [currentUser, fetchSessions]); // Rerun if currentUser changes
+
+  // Fetch messages for the active session
+  const fetchMessagesForSession = useCallback(
+    async (sessionId) => {
+      if (!sessionId || !currentUser || !apiClient?.getChatSessionMessagesAPI) {
+        setCurrentMessages(
+          activeSessionId
+            ? []
+            : [{ sender: "bot", text: "Select or start a chat." }]
+        );
+        return;
+      }
+      setIsLoadingMessages(true);
+      try {
+        const sessionData = await apiClient.getChatSessionMessagesAPI(
+          sessionId
+        );
+        setCurrentMessages(sessionData.messages || []);
+      } catch (error) {
+        console.error(
+          `Error fetching messages for session ${sessionId}:`,
+          error
+        );
+        setCurrentMessages([
+          {
+            sender: "bot",
+            text: `Error loading messages: ${
+              error.data?.message || error.message
+            }`,
+          },
+        ]);
+      } finally {
+        setIsLoadingMessages(false);
+      }
+    },
+    [currentUser, apiClient, activeSessionId]
+  ); // Added activeSessionId
+
+  useEffect(() => {
+    if (activeSessionId) {
+      fetchMessagesForSession(activeSessionId);
+    } else if (
+      currentUser &&
+      sessions.length === 0 &&
+      !isLoadingSessions &&
+      !isCreatingSession
+    ) {
+      // This handles the case where user is logged in, no sessions are loaded yet, and not creating one
+      setCurrentMessages([
+        { sender: "bot", text: "Start a new chat to begin!" },
       ]);
     } else if (!currentUser) {
-      setMessages([]); // Clear chat if user logs out
+      setCurrentMessages([]);
     }
-  }, [currentUser]);
+  }, [
+    activeSessionId,
+    fetchMessagesForSession,
+    currentUser,
+    sessions,
+    isLoadingSessions,
+    isCreatingSession,
+  ]);
 
-  const handleSendMessage = async () => {
-    if (!inputValue.trim() || !currentUser) return;
+  const handleStartNewChat = async () => {
+    if (!currentUser || !apiClient?.startNewChatSessionAPI || isCreatingSession)
+      return;
 
     if (currentUser.credits < 1) {
-      setMessages((prev) => [
+      setCurrentMessages([
+        { sender: "bot", text: "You need credits to start a new chat." },
+      ]);
+      return;
+    }
+    setIsCreatingSession(true);
+    try {
+      const newSessionData = await apiClient.startNewChatSessionAPI(""); // Start with an empty first message from user
+
+      // Add to top of sessions list and make it active
+      const newSessionEntry = {
+        _id: newSessionData.sessionId,
+        title: newSessionData.sessionTitle,
+        preview:
+          newSessionData.messages.slice(-1)[0]?.text.substring(0, 50) ||
+          "Chat started",
+        lastActivity: new Date(),
+      };
+      setSessions((prev) => [
+        newSessionEntry,
+        ...prev.filter((s) => s._id !== newSessionData.sessionId),
+      ]);
+
+      setActiveSessionId(newSessionData.sessionId); // This will trigger useEffect to fetch messages
+      setCurrentMessages(newSessionData.messages); // Set messages immediately
+
+      if (updateUserCredits && newSessionData.currentCredits !== undefined) {
+        updateUserCredits(newSessionData.currentCredits);
+      }
+      inputRef.current?.focus();
+    } catch (error) {
+      console.error("Error starting new chat:", error);
+      setCurrentMessages([
+        {
+          sender: "bot",
+          text: `Error starting chat: ${error.data?.message || error.message}`,
+        },
+      ]);
+      if (error.data?.credits !== undefined && updateUserCredits) {
+        updateUserCredits(error.data.credits);
+      }
+    } finally {
+      setIsCreatingSession(false);
+    }
+  };
+
+  const handleSendMessage = async () => {
+    if (
+      !inputValue.trim() ||
+      !activeSessionId ||
+      !currentUser ||
+      !apiClient?.sendMessageToSessionAPI ||
+      isSendingMessage
+    )
+      return;
+
+    // Optimistic UI update for user's message
+    const newUserMessage = {
+      sender: "user",
+      text: inputValue.trim(),
+      timestamp: new Date().toISOString(),
+    };
+    setCurrentMessages((prev) => [...prev, newUserMessage]);
+
+    const messageToSend = inputValue.trim();
+    setInputValue("");
+    setIsSendingMessage(true);
+
+    try {
+      const response = await apiClient.sendMessageToSessionAPI(
+        activeSessionId,
+        messageToSend
+      );
+      setCurrentMessages((prev) => [
         ...prev,
         {
           sender: "bot",
-          text: "You've run out of chat credits! Please look for ways to earn more.",
+          text: response.reply,
+          timestamp: new Date().toISOString(),
         },
       ]);
-      return;
-    }
+      if (onChatCreditDeduction) onChatCreditDeduction();
 
-    const newUserMessage = { sender: "user", text: inputValue };
-    setMessages((prevMessages) => [...prevMessages, newUserMessage]);
-    const currentInput = inputValue; // Store before clearing
-    setInputValue("");
-    setIsTyping(true);
-
-    try {
-      const historyForAPI = [...messages, newUserMessage].slice(-11, -1); // Send up to 10 previous turns
-      const response = await callChatAPI(currentInput, historyForAPI);
-
-      setMessages((prevMessages) => [
-        ...prevMessages,
-        { sender: "bot", text: response.reply },
-      ]);
-      onChatCreditDeduction(); // Notify parent to decrement credits in its state
-    } catch (error) {
-      console.error("Chat API error:", error);
-      let errorMessage =
-        "Sorry, I'm having trouble connecting. Please try again.";
-      if (error.status === 403 || error.status === 402) {
-        // Insufficient credits from backend
-        errorMessage = error.data?.message || "You don't have enough credits.";
-        if (error.data?.credits !== undefined && updateUserCredits) {
-          updateUserCredits(error.data.credits); // Sync credits with server state
-        }
-      }
-      setMessages((prevMessages) => [
-        ...prevMessages,
-        { sender: "bot", text: errorMessage },
-      ]);
-    } finally {
-      setIsTyping(false);
+      setSessions((prevSessions) =>
+        prevSessions
+          .map((s) =>
+            s._id === activeSessionId
+              ? {
+                  ...s,
+                  preview: response.reply.substring(0, 50) + "...",
+                  lastActivity: new Date(),
+                }
+              : s
+          )
+          .sort((a, b) => new Date(b.lastActivity) - new Date(a.lastActivity))
+      );
       inputRef.current?.focus();
+    } catch (error) {
+      console.error("Error sending message:", error);
+      setCurrentMessages((prev) => [...prev.slice(0, -1)]); // Remove optimistic user message on error
+      setCurrentMessages((prev) => [
+        ...prev,
+        {
+          sender: "bot",
+          text: `Error: ${error.data?.message || error.message}`,
+        },
+      ]);
+      if (error.data?.credits !== undefined && updateUserCredits) {
+        updateUserCredits(error.data.credits);
+      }
+    } finally {
+      setIsSendingMessage(false);
     }
-  };
-
-  const handleQuickResponse = (text) => {
-    if (!currentUser) {
-      // Parent component (app/page.js) should ideally handle opening login modal
-      alert("Please login to use quick responses.");
-      return;
-    }
-    setInputValue(text);
-    // Consider calling handleSendMessage() or just letting user press send
   };
 
   if (!currentUser) {
     return (
-      <div className="flex flex-col items-center justify-center h-[calc(100vh-12rem)] text-gray-500">
+      <div className="flex flex-col items-center justify-center h-full text-gray-500 py-10">
         <i className="fas fa-comments text-4xl mb-4 text-purple-400"></i>
         <p>Please login to start chatting with MindMate.</p>
       </div>
@@ -104,129 +270,187 @@ export default function ChatPage({
   }
 
   return (
-    <div id="chat" className="page active">
+    <div className="flex flex-grow h-[calc(100vh-var(--header-height,100px))]">
       {" "}
-      {/* 'active' class not needed if this is the only content */}
-      <div className="max-w-4xl mx-auto">
-        <div className="bg-white rounded-2xl shadow-lg h-[calc(100vh-16rem)] sm:h-[calc(100vh-14rem)] md:h-[calc(100vh-12rem)] flex flex-col">
-          {/* Chat Header */}
-          <div className="p-4 sm:p-6 border-b border-gray-200">
-            {" "}
-            {/* Responsive padding */}
-            <div className="flex items-center gap-3 sm:gap-4">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-r from-purple-500 to-indigo-600 rounded-full flex items-center justify-center">
-                <i className="fas fa-robot text-white text-lg sm:text-xl"></i>{" "}
-                {/* Responsive icon size */}
-              </div>
-              <div>
-                <h3 className="font-semibold text-gray-900 text-base sm:text-lg">
-                  MindMate Assistant
-                </h3>
-                <p className="text-xs sm:text-sm text-green-600 flex items-center gap-1">
-                  <span className="w-2 h-2 bg-green-500 rounded-full"></span>{" "}
-                  Online
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Chat Messages */}
-          <div
-            id="chatMessages"
-            className="flex-1 p-4 sm:p-6 overflow-y-auto space-y-3 sm:space-y-4"
-          >
-            {messages.map((msg, index) => (
-              <div
-                key={index}
-                className={`flex gap-2 sm:gap-3 ${
-                  msg.sender === "user" ? "justify-end" : ""
+      {/* Adjust var(--header-height) based on your actual header height */}
+      {/* Sessions Sidebar */}
+      <div
+        className={`w-full md:w-1/3 lg:w-1/4 bg-slate-100 border-r border-gray-200 p-3 flex flex-col transition-all duration-300 ease-in-out md:translate-x-0 ${
+          sessions.length > 0 || activeSessionId ? "md:block" : "md:block"
+        }`}
+      >
+        {" "}
+        {/* Simpler: always block on md+ for now */}
+        <button
+          onClick={handleStartNewChat}
+          disabled={isSendingMessage || isCreatingSession || isLoadingSessions}
+          className="w-full mb-3 bg-purple-600 text-white py-2.5 px-4 rounded-lg hover:bg-purple-700 transition disabled:opacity-60 text-sm font-medium flex items-center justify-center"
+        >
+          <i className="fas fa-plus mr-2"></i>New Chat
+        </button>
+        {isLoadingSessions && (
+          <p className="text-xs text-gray-500 text-center py-2">
+            Loading sessions...
+          </p>
+        )}
+        {!isLoadingSessions && sessions.length === 0 && (
+          <p className="text-xs text-gray-500 text-center py-2">
+            No chat sessions yet.
+          </p>
+        )}
+        <ul className="space-y-1 overflow-y-auto flex-grow">
+          {sessions.map((session) => (
+            <li key={session._id}>
+              <button
+                onClick={() => {
+                  if (!isSendingMessage) setActiveSessionId(session._id);
+                }}
+                disabled={isSendingMessage}
+                className={`w-full text-left p-2.5 rounded-md hover:bg-slate-200 text-sm transition-colors ${
+                  activeSessionId === session._id
+                    ? "bg-purple-100 text-purple-800 font-semibold shadow-sm"
+                    : "text-gray-700"
                 }`}
               >
-                {msg.sender === "bot" && (
-                  <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-r from-purple-500 to-indigo-600 rounded-full flex items-center justify-center flex-shrink-0">
-                    <i className="fas fa-robot text-white text-xs sm:text-sm"></i>
-                  </div>
-                )}
-                <div
-                  className={`${
-                    msg.sender === "user"
-                      ? "chat-bubble-user text-white"
-                      : "chat-bubble-bot"
-                  } p-2.5 px-3.5 sm:p-3 sm:px-4 max-w-[80%] sm:max-w-md`}
+                <p className="font-medium truncate">
+                  {session.title ||
+                    `Chat ${formatDate(session.createdAt, true)}`}
+                </p>
+                <p
+                  className={`text-xs truncate ${
+                    activeSessionId === session._id
+                      ? "text-purple-600"
+                      : "text-gray-500"
+                  }`}
                 >
-                  <p
-                    className={`text-sm ${
-                      msg.sender === "user" ? "" : "text-gray-800"
-                    }`}
-                  >
-                    {msg.text}
-                  </p>
-                </div>
-                {msg.sender === "user" && (
-                  <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gray-300 rounded-full flex items-center justify-center flex-shrink-0">
-                    <i className="fas fa-user text-gray-600 text-2xs sm:text-xs"></i>{" "}
-                    {/* Adjusted icon size for user */}
-                  </div>
-                )}
-              </div>
-            ))}
-            <div ref={chatMessagesEndRef} />
-          </div>
+                  {session.preview || "No messages yet"}
+                </p>
+              </button>
+            </li>
+          ))}
+        </ul>
+      </div>
+      {/* Main Chat Area */}
+      <div className="flex-1 flex flex-col bg-white">
+        <div className="p-4 sm:p-5 border-b border-gray-200 flex items-center">
+          {/* Mobile hamburger can be here if sessions list is collapsible on mobile */}
+          <h3 className="font-semibold text-gray-800 text-base sm:text-lg truncate flex-1">
+            {activeSessionId
+              ? sessions.find((s) => s._id === activeSessionId)?.title ||
+                "Loading chat..."
+              : "Select or Start a Chat"}
+          </h3>
+        </div>
 
-          {/* Typing Indicator */}
-          {isTyping && (
-            <div className="px-4 sm:px-6 pb-1 sm:pb-2">
-              <div className="flex gap-2 sm:gap-3">
-                <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-r from-purple-500 to-indigo-600 rounded-full flex items-center justify-center flex-shrink-0">
+        <div className="flex-1 p-4 sm:p-6 overflow-y-auto space-y-3 sm:space-y-4">
+          {isLoadingMessages && (
+            <p className="text-center text-gray-500">Loading messages...</p>
+          )}
+          {!isLoadingMessages &&
+            currentMessages.length === 0 &&
+            activeSessionId && (
+              <p className="text-center text-gray-500">
+                No messages in this session yet. Send one!
+              </p>
+            )}
+          {!isLoadingMessages &&
+            currentMessages.length === 0 &&
+            !activeSessionId &&
+            !isLoadingSessions && (
+              <div className="text-center text-gray-500 flex flex-col items-center justify-center h-full">
+                <i className="far fa-comments text-5xl text-gray-300 mb-3"></i>
+                <p>Select a chat from the left or start a new one.</p>
+              </div>
+            )}
+          {currentMessages.map((msg, index) => (
+            <div
+              key={msg._id || index}
+              className={`flex gap-2 sm:gap-3 ${
+                msg.sender === "user" ? "justify-end" : ""
+              }`}
+            >
+              {msg.sender !== "user" && (
+                <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-r from-purple-500 to-indigo-600 rounded-full flex items-center justify-center flex-shrink-0 shadow">
                   <i className="fas fa-robot text-white text-xs sm:text-sm"></i>
                 </div>
-                <div className="chat-bubble-bot typing-indicator !py-3 !px-3.5 sm:!py-3.5 sm:!px-4">
-                  {" "}
-                  {/* Adjusted padding for typing indicator */}
-                  <div className="typing-dot"></div>
-                  <div className="typing-dot"></div>
-                  <div className="typing-dot"></div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Chat Input */}
-          <div className="p-4 sm:p-6 border-t border-gray-200">
-            <div className="flex gap-2 sm:gap-4">
-              <input
-                type="text"
-                placeholder="Share what's on your mind..."
-                className="flex-1 px-3 py-2.5 sm:px-4 sm:py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                onKeyPress={(e) =>
-                  e.key === "Enter" && !isTyping && handleSendMessage()
-                }
-                disabled={isTyping}
-              />
-              <button
-                onClick={handleSendMessage}
-                className="bg-gradient-to-r from-purple-500 to-indigo-600 text-white px-4 py-2.5 sm:px-6 sm:py-3 rounded-xl hover:shadow-lg transition-all disabled:opacity-60"
-                disabled={isTyping || !inputValue.trim()}
+              )}
+              <div
+                className={`${
+                  msg.sender === "user"
+                    ? "chat-bubble-user text-white"
+                    : "chat-bubble-bot"
+                } p-2.5 px-3.5 sm:p-3 sm:px-4 max-w-[80%] sm:max-w-md shadow-sm`}
               >
-                <i className="fas fa-paper-plane"></i>
-              </button>
-            </div>
-            <div className="flex gap-2 mt-3 sm:mt-4 flex-wrap">
-              {["I feel stressed", "I need to talk", "Help me relax"].map(
-                (text) => (
-                  <button
-                    key={text}
-                    onClick={() => handleQuickResponse(text)}
-                    className="px-3 py-1.5 sm:px-4 sm:py-2 bg-gray-100 text-gray-700 rounded-full text-xs sm:text-sm hover:bg-gray-200 transition-colors"
-                  >
-                    {text}
-                  </button>
-                )
+                <p
+                  className={`text-sm ${
+                    msg.sender === "user" ? "" : "text-gray-800"
+                  }`}
+                >
+                  {msg.text}
+                </p>
+              </div>
+              {msg.sender === "user" && (
+                <div className="w-7 h-7 sm:w-8 sm:h-8 bg-slate-300 rounded-full flex items-center justify-center flex-shrink-0 shadow">
+                  <i className="fas fa-user text-slate-600 text-2xs sm:text-xs"></i>
+                </div>
               )}
             </div>
+          ))}
+          <div ref={chatMessagesEndRef} />
+        </div>
+
+        {isSendingMessage && activeSessionId && (
+          <div className="px-4 sm:px-6 pb-1 sm:pb-2">
+            <div className="flex gap-2 sm:gap-3">
+              <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-r from-purple-500 to-indigo-600 rounded-full flex items-center justify-center flex-shrink-0">
+                <i className="fas fa-robot text-white text-xs sm:text-sm"></i>
+              </div>
+              <div className="chat-bubble-bot typing-indicator !py-3 !px-3.5 sm:!py-3.5 sm:!px-4">
+                <div className="typing-dot"></div>{" "}
+                <div className="typing-dot"></div>{" "}
+                <div className="typing-dot"></div>
+              </div>
+            </div>
           </div>
+        )}
+
+        <div className="p-4 sm:p-6 border-t border-gray-200">
+          <div className="flex gap-2 sm:gap-4">
+            <input
+              ref={inputRef}
+              type="text"
+              placeholder={
+                activeSessionId
+                  ? "Type your message..."
+                  : "Select a chat to reply"
+              }
+              className="flex-1 px-3 py-2.5 sm:px-4 sm:py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base disabled:bg-gray-100"
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              onKeyPress={(e) =>
+                e.key === "Enter" &&
+                !isSendingMessage &&
+                activeSessionId &&
+                handleSendMessage()
+              }
+              disabled={
+                isSendingMessage || !activeSessionId || isLoadingMessages
+              }
+            />
+            <button
+              onClick={handleSendMessage}
+              className="bg-gradient-to-r from-purple-500 to-indigo-600 text-white px-4 py-2.5 sm:px-6 sm:py-3 rounded-xl hover:shadow-lg transition-all disabled:opacity-60"
+              disabled={
+                isSendingMessage ||
+                !activeSessionId ||
+                !inputValue.trim() ||
+                isLoadingMessages
+              }
+            >
+              <i className="fas fa-paper-plane"></i>
+            </button>
+          </div>
+          {/* Quick Responses can be re-added here if desired, ensure they are disabled if no active session */}
         </div>
       </div>
     </div>

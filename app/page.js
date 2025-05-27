@@ -214,10 +214,11 @@ export default function MindMateApp() {
     if (currentUser) {
       setCurrentUser((prevUser) => ({
         ...prevUser,
-        credits: Math.max(0, prevUser.credits - 1),
+        credits: Math.max(0, (prevUser.credits || 0) - 1),
       }));
     }
   };
+
   const updateUserCredits = (newCreditCount) => {
     if (currentUser && newCreditCount !== undefined) {
       setCurrentUser((prevUser) => ({ ...prevUser, credits: newCreditCount }));
@@ -294,7 +295,7 @@ export default function MindMateApp() {
         return (
           <ChatPage
             currentUser={currentUser}
-            callChatAPI={apiClient.callChatAPI}
+            apiClient={apiClient} // Pass the whole apiClient object
             onChatCreditDeduction={handleChatCreditDeduction}
             updateUserCredits={updateUserCredits}
           />
