@@ -3,6 +3,8 @@ import dbConnect from "@/lib/dbConnect";
 import User from "@/models/User";
 import { NextResponse } from "next/server";
 
+export const dynamic = "force-dynamic"; // Ensures the route is re-evaluated on every request
+
 export async function GET(request) {
   try {
     const userId = request.headers.get("x-user-id"); // Get from middleware

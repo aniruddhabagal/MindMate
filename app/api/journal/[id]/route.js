@@ -4,6 +4,8 @@ import JournalEntry from "@/models/JournalEntry";
 import { NextResponse } from "next/server";
 import mongoose from "mongoose";
 
+export const dynamic = "force-dynamic"; // Ensures the route is re-evaluated on every request
+
 // --- Get a single journal entry by ID ---
 export async function GET(request, { params }) {
   try {

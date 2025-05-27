@@ -3,6 +3,8 @@ import dbConnect from "@/lib/dbConnect";
 import JournalEntry from "@/models/JournalEntry"; // Adjust path
 import { NextResponse } from "next/server";
 
+export const dynamic = "force-dynamic"; // Ensures the route is re-evaluated on every request
+
 // --- Create a new journal entry ---
 export async function POST(request) {
   try {
@@ -62,7 +64,11 @@ export async function GET(request) {
     const journalEntries = await JournalEntry.find({ user: userId }).sort({
       entryDate: -1,
     }); // Newest first
-    return NextResponse.json(journalEntries);
+    return NextResponse.json(journalEntries, {
+      headers: {
+        "Cache-Control": "no-store, max-age=0, must-revalidate",
+      },
+    });
   } catch (error) {
     console.error("GET /api/journal error:", error);
     return NextResponse.json(

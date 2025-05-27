@@ -4,6 +4,8 @@ import User from "@/models/User";
 import { NextResponse } from "next/server";
 import mongoose from "mongoose";
 
+export const dynamic = "force-dynamic"; // Ensures the route is re-evaluated on every request
+
 // PUT to update a user's details (e.g., credits, role, blacklist status)
 export async function PUT(request, { params }) {
   const adminRole = request.headers.get("x-user-role");

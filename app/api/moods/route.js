@@ -3,6 +3,8 @@ import dbConnect from "@/lib/dbConnect";
 import MoodEntry from "@/models/MoodEntry";
 import { NextResponse } from "next/server";
 
+export const dynamic = "force-dynamic"; // Ensures the route is re-evaluated on every request
+
 // --- Create a new mood entry ---
 export async function POST(request) {
   try {
@@ -71,7 +73,11 @@ export async function GET(request) {
     const moodEntries = await MoodEntry.find({ user: userId }).sort({
       entryDate: -1,
     });
-    return NextResponse.json(moodEntries);
+    return NextResponse.json(moodEntries, {
+      headers: {
+        "Cache-Control": "no-store, max-age=0, must-revalidate",
+      },
+    });
   } catch (error) {
     console.error("GET /api/moods error:", error);
     return NextResponse.json(

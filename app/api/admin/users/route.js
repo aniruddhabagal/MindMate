@@ -3,6 +3,8 @@ import dbConnect from "@/lib/dbConnect";
 import User from "@/models/User";
 import { NextResponse } from "next/server";
 
+export const dynamic = "force-dynamic"; // Ensures the route is re-evaluated on every request
+
 // GET all users (for admin)
 export async function GET(request) {
   // The 'x-user-role' header would have been set by middleware if admin check passed
@@ -33,12 +35,19 @@ export async function GET(request) {
 
     const totalUsers = await User.countDocuments({});
 
-    return NextResponse.json({
-      users,
-      currentPage: page,
-      totalPages: Math.ceil(totalUsers / limit),
-      totalUsers,
-    });
+    return NextResponse.json(
+      {
+        users,
+        currentPage: page,
+        totalPages: Math.ceil(totalUsers / limit),
+        totalUsers,
+      },
+      {
+        headers: {
+          "Cache-Control": "no-store, max-age=0, must-revalidate",
+        },
+      }
+    );
   } catch (error) {
     console.error("GET /api/admin/users error:", error);
     return NextResponse.json(

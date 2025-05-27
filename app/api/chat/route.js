@@ -4,6 +4,8 @@ import User from "@/models/User"; // For credit deduction
 import { model as geminiModel } from "@/lib/geminiClient";
 import { NextResponse } from "next/server";
 
+export const dynamic = "force-dynamic"; // Ensures the route is re-evaluated on every request
+
 async function fetchUserForChat(userId) {
   const user = await User.findById(userId);
   if (!user) {
@@ -107,7 +109,7 @@ export async function POST(request) {
 
     const chatSession = geminiModel.startChat({
       history: historyForGemini,
-      generationConfig: { temperature: 0. },
+      generationConfig: { temperature: 0 },
       // System instruction is part of the geminiModel instance from geminiClient.js
     });
 

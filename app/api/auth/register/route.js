@@ -3,6 +3,8 @@ import User from "@/models/User"; // Adjust path
 import jwt from "jsonwebtoken";
 import { NextResponse } from "next/server";
 
+export const dynamic = "force-dynamic"; // Ensures the route is re-evaluated on every request
+
 const generateToken = (userId, role) => {
   return jwt.sign({ userId, role }, process.env.JWT_SECRET, {
     // role included
