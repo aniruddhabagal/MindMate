@@ -44,10 +44,11 @@ export const metadata = {
     siteName: "MindMate",
     images: [
       {
-        url: "/mindmate.png", // Fixed extension
+        url: "https://mindmate.aniruddha.fyi/mindmate.png", // Full absolute URL
         width: 1200,
         height: 630,
         alt: "MindMate - Mental Wellness Companion",
+        type: "image/png",
       },
     ],
     locale: "en_US",
@@ -58,7 +59,7 @@ export const metadata = {
     title: "MindMate - Your Mental Wellness Companion",
     description:
       "MindMate helps you manage stress, reflect on your emotions, and receive positive, supportive guidance.",
-    images: ["/mindmate.png"],
+    images: ["https://mindmate.aniruddha.fyi/mindmate.png"], // Full absolute URL
     creator: "@AniruddhaBagal", // Add your Twitter handle
   },
   robots: {
@@ -107,7 +108,7 @@ export default function RootLayout({ children }) {
         <meta charSet="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-        {/* Additional Meta Tags */}
+        {/* Additional Meta Tags for WhatsApp & Social Media */}
         <meta
           name="format-detection"
           content="telephone=no, date=no, email=no, address=no"
@@ -116,6 +117,31 @@ export default function RootLayout({ children }) {
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="MindMate" />
+
+        {/* Explicit meta tags for better social media compatibility */}
+        <meta
+          property="og:image"
+          content="https://mindmate.aniruddha.fyi/mindmate.png"
+        />
+        <meta
+          property="og:image:secure_url"
+          content="https://mindmate.aniruddha.fyi/mindmate.png"
+        />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta
+          property="og:image:alt"
+          content="MindMate - Mental Wellness Companion"
+        />
+        <meta property="og:image:type" content="image/png" />
+        <meta
+          name="twitter:image"
+          content="https://mindmate.aniruddha.fyi/mindmate.png"
+        />
+        <meta
+          name="twitter:image:alt"
+          content="MindMate - Mental Wellness Companion"
+        />
 
         {/* Preconnect for Performance */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
