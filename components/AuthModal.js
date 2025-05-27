@@ -1,8 +1,7 @@
 // components/AuthModal.js
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useState, useEffect, useRef } from "react"; // Added useEffect, useRef
 
-// Props: isOpen, onClose, onLogin, onRegister, initialError, initialFormType = 'login'
 export default function AuthModal({
   isOpen,
   onClose,
@@ -11,12 +10,29 @@ export default function AuthModal({
   initialError,
   initialFormType = "login",
 }) {
-  const [formType, setFormType] = useState(initialFormType); // 'login' or 'register'
+  const [formType, setFormType] = useState(initialFormType);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState(initialError || "");
-  const usernameInputRef = useRef(null);
+  const [isLoading, setIsLoading] = useState(false); // <<< New loading state
+
+  const usernameInputRef = useRef(null); // For focusing
+
+  useEffect(() => {
+    if (isOpen) {
+      // When modal opens, reset form type and error, and focus
+      setFormType(initialFormType);
+      setError(initialError || "");
+      setUsername("");
+      setPassword("");
+      setConfirmPassword("");
+      setTimeout(() => {
+        // Timeout to ensure input is visible before focusing
+        usernameInputRef.current?.focus();
+      }, 100);
+    }
+  }, [isOpen, initialFormType, initialError]);
 
   const handleSwitchForm = (type) => {
     setFormType(type);
@@ -24,53 +40,54 @@ export default function AuthModal({
     setUsername("");
     setPassword("");
     setConfirmPassword("");
+    setIsLoading(false); // Reset loading state if form is switched
+    setTimeout(() => usernameInputRef.current?.focus(), 0);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    setIsLoading(true); // <<< Start loading
+
     if (formType === "login") {
       if (!username || !password) {
         setError("Username and password are required.");
+        setIsLoading(false); // <<< Stop loading on validation error
         return;
       }
       try {
-        await onLogin(username, password);
-        // onClose(); // Parent should close on successful login/register
+        await onLogin(username, password); // onLogin in app/page.js will handle closing modal
       } catch (err) {
         setError(err.message || "Login failed.");
+      } finally {
+        setIsLoading(false); // <<< Stop loading
       }
     } else {
       // register
       if (!username || !password || !confirmPassword) {
         setError("All fields are required.");
+        setIsLoading(false);
         return;
       }
       if (password !== confirmPassword) {
         setError("Passwords do not match.");
+        setIsLoading(false);
         return;
       }
       if (password.length < 6) {
         setError("Password must be at least 6 characters.");
+        setIsLoading(false);
         return;
       }
       try {
-        await onRegister(username, password);
-        // onClose();
+        await onRegister(username, password); // onRegister in app/page.js will handle closing modal
       } catch (err) {
         setError(err.message || "Registration failed.");
+      } finally {
+        setIsLoading(false);
       }
     }
   };
-
-  useEffect(() => {
-    if (isOpen && formType === "login" && usernameInputRef.current) {
-      usernameInputRef.current.focus();
-    } else if (isOpen && formType === "register" && usernameInputRef.current) {
-      // Assuming username field is same for register
-      usernameInputRef.current.focus();
-    }
-  }, [isOpen, formType]);
 
   if (!isOpen) return null;
 
@@ -87,7 +104,8 @@ export default function AuthModal({
         <button
           type="button"
           onClick={onClose}
-          className="absolute top-3 right-3 text-gray-500 hover:text-gray-700 text-2xl"
+          disabled={isLoading}
+          className="absolute top-3 right-3 text-gray-400 hover:text-gray-600 text-2xl disabled:opacity-50"
         >
           ×
         </button>
@@ -106,12 +124,14 @@ export default function AuthModal({
                   Username
                 </label>
                 <input
+                  ref={usernameInputRef}
                   type="text"
                   id="loginUsernameAuth"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  disabled={isLoading}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:bg-gray-100"
                 />
               </div>
               <div className="mb-6">
@@ -127,7 +147,8 @@ export default function AuthModal({
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  disabled={isLoading}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:bg-gray-100"
                 />
               </div>
               {error && (
@@ -135,16 +156,24 @@ export default function AuthModal({
               )}
               <button
                 type="submit"
-                className="w-full bg-gradient-to-r from-purple-500 to-indigo-600 text-white py-2.5 rounded-lg hover:shadow-lg transition-all text-sm font-semibold"
+                disabled={isLoading}
+                className="w-full bg-gradient-to-r from-purple-500 to-indigo-600 text-white py-2.5 rounded-lg hover:shadow-lg transition-all text-sm font-semibold disabled:opacity-70 flex items-center justify-center"
               >
-                Login
+                {isLoading ? (
+                  <>
+                    <i className="fas fa-spinner fa-spin mr-2"></i>Processing...
+                  </>
+                ) : (
+                  "Login"
+                )}
               </button>
               <p className="text-center text-sm text-gray-600 mt-4">
                 Don&apos;t have an account?{" "}
                 <button
                   type="button"
                   onClick={() => handleSwitchForm("register")}
-                  className="text-purple-600 hover:underline font-medium"
+                  disabled={isLoading}
+                  className="text-purple-600 hover:underline font-medium disabled:opacity-70"
                 >
                   Register here
                 </button>
@@ -152,6 +181,7 @@ export default function AuthModal({
             </form>
           </>
         ) : (
+          // Register form
           <>
             <h3 className="text-2xl font-bold mb-6 text-gray-800 text-center">
               Create Account
@@ -165,15 +195,19 @@ export default function AuthModal({
                   Username
                 </label>
                 <input
+                  ref={usernameInputRef}
                   type="text"
                   id="registerUsernameAuth"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  disabled={isLoading}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:bg-gray-100"
                 />
               </div>
               <div className="mb-4">
+                {" "}
+                {/* Consistent margin */}
                 <label
                   htmlFor="registerPasswordAuth"
                   className="block text-sm font-medium text-gray-700 mb-1"
@@ -186,7 +220,8 @@ export default function AuthModal({
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  disabled={isLoading}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:bg-gray-100"
                 />
               </div>
               <div className="mb-6">
@@ -202,7 +237,8 @@ export default function AuthModal({
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  disabled={isLoading}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:bg-gray-100"
                 />
               </div>
               {error && (
@@ -210,16 +246,24 @@ export default function AuthModal({
               )}
               <button
                 type="submit"
-                className="w-full bg-gradient-to-r from-purple-500 to-indigo-600 text-white py-2.5 rounded-lg hover:shadow-lg transition-all text-sm font-semibold"
+                disabled={isLoading}
+                className="w-full bg-gradient-to-r from-purple-500 to-indigo-600 text-white py-2.5 rounded-lg hover:shadow-lg transition-all text-sm font-semibold disabled:opacity-70 flex items-center justify-center"
               >
-                Register
+                {isLoading ? (
+                  <>
+                    <i className="fas fa-spinner fa-spin mr-2"></i>Processing...
+                  </>
+                ) : (
+                  "Register"
+                )}
               </button>
               <p className="text-center text-sm text-gray-600 mt-4">
                 Already have an account?{" "}
                 <button
                   type="button"
                   onClick={() => handleSwitchForm("login")}
-                  className="text-purple-600 hover:underline font-medium"
+                  disabled={isLoading}
+                  className="text-purple-600 hover:underline font-medium disabled:opacity-70"
                 >
                   Login here
                 </button>
