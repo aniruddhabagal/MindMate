@@ -3,8 +3,9 @@ import User from "@/models/User"; // Adjust path
 import jwt from "jsonwebtoken";
 import { NextResponse } from "next/server";
 
-const generateToken = (userId) => {
-  return jwt.sign({ userId }, process.env.JWT_SECRET, {
+const generateToken = (userId, role) => {
+  return jwt.sign({ userId, role }, process.env.JWT_SECRET, {
+    // role included
     expiresIn: process.env.JWT_EXPIRES_IN || "1d",
   });
 };
@@ -39,8 +40,9 @@ export async function POST(request) {
         {
           _id: user._id,
           username: user.username,
-          token: generateToken(user._id),
+          token: generateToken(user._id, user.role), // Token contains role
           credits: user.credits,
+          role: user.role,
           message: "User registered successfully",
         },
         { status: 201 }

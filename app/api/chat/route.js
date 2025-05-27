@@ -4,24 +4,36 @@ import User from "@/models/User"; // For credit deduction
 import { model as geminiModel } from "@/lib/geminiClient"; // Assuming geminiClient.js is in lib/
 import { NextResponse } from "next/server";
 
-// Helper function for credit check (can be moved to a utility file)
-async function checkAndDeductUserCredits(userId) {
+async function fetchUserForChat(userId) {
   const user = await User.findById(userId);
   if (!user) {
-    const err = new Error("User not found for credit check");
+    const err = new Error("User not found");
     err.status = 404;
     throw err;
   }
-  if (user.credits < 1) {
-    // Each chat interaction costs 1 credit
-    const err = new Error("Insufficient credits to chat.");
-    err.status = 403; // Or 402 Payment Required
-    err.credits = user.credits; // Send current credits back
+  return user;
+}
+
+// Helper function for credit check (can be moved to a utility file)
+async function checkAndDeductUserCredits(userInstance) {
+  // Now takes user instance
+  if (userInstance.isBlacklisted) {
+    // Check blacklist status
+    const err = new Error(
+      "Your account has been restricted from using this feature."
+    );
+    err.status = 403; // Forbidden
     throw err;
   }
-  user.credits -= 1;
-  await user.save();
-  return user.credits; // Return updated credits
+  if (userInstance.credits < 1) {
+    const err = new Error("Insufficient credits to chat.");
+    err.status = 403; // Or 402 Payment Required
+    err.credits = userInstance.credits;
+    throw err;
+  }
+  userInstance.credits -= 1;
+  await userInstance.save();
+  return userInstance.credits;
 }
 
 export async function POST(request) {
@@ -37,9 +49,9 @@ export async function POST(request) {
     await dbConnect();
 
     // --- Credit Check and Deduction ---
-    let updatedCredits;
     try {
-      updatedCredits = await checkAndDeductUserCredits(userId);
+      const userForChat = await fetchUserForChat(userId); // Fetch user once
+      const updatedCredits = await checkAndDeductUserCredits(userForChat);
     } catch (creditError) {
       return NextResponse.json(
         { message: creditError.message, credits: creditError.credits },
@@ -115,6 +127,13 @@ export async function POST(request) {
         { status: 400 }
       );
     }
+    if (
+      error.message ===
+      "Your account has been restricted from using this feature."
+    ) {
+      return NextResponse.json({ message: error.message }, { status: 403 });
+    }
+
     // General server error
     return NextResponse.json(
       { message: "Error communicating with the AI.", error: error.message },

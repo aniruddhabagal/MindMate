@@ -20,8 +20,19 @@ const userSchema = new Schema(
     },
     credits: {
       type: Number,
-      default: 10,
+      default: 20,
       min: 0,
+    },
+    role: {
+      // New role field
+      type: String,
+      enum: ["user", "admin"], // Define possible roles
+      default: "user", // Default role for new registrations
+    },
+    isBlacklisted: {
+      // New field for blacklisting
+      type: Boolean,
+      default: false,
     },
   },
   {

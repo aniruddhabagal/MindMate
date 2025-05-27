@@ -27,6 +27,7 @@ export async function GET(request) {
       username: user.username,
       createdAt: user.createdAt,
       credits: user.credits,
+      role: user.role,
     });
   } catch (error) {
     console.error("/api/auth/me error:", error);

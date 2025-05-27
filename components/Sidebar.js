@@ -5,7 +5,7 @@ import Link from "next/link"; // For navigation (optional, if you use Next.js ro
 // We'll need a way to manage current page state, possibly via context or props
 
 // Props might include: onShowPage (function to handle page changes), currentPage
-export default function Sidebar({ onShowPage, currentPage }) {
+export default function Sidebar({ onShowPage, currentPage, currentUser }) {
   // The original onclick="showPage('home')" etc. will be replaced.
   // We'll pass a function from the parent component (e.g., the main page layout)
   // or use Next.js Link components if these are actual routes.
@@ -15,6 +15,13 @@ export default function Sidebar({ onShowPage, currentPage }) {
     if (onShowPage) {
       onShowPage(pageId);
     }
+  };
+
+  const handleAdminNav = () => {
+    // If /admin is a separate Next.js route handled by app/admin/page.js,
+    // you'd navigate using Next.js router here instead of onShowPage.
+    // For now, assuming onShowPage handles it:
+    onShowPage("admin");
   };
 
   return (
@@ -71,6 +78,33 @@ export default function Sidebar({ onShowPage, currentPage }) {
               </button>
             </li>
           ))}
+
+          {currentUser && currentUser.role === "admin" && (
+            <li>
+              <button
+                onClick={handleAdminNav}
+                // Or use Next.js Link: <Link href="/admin"> ... </Link> if /admin is a separate route
+                className={`nav-btn w-full flex items-center gap-3 px-4 py-3 text-left rounded-lg hover:bg-gray-100 transition-colors ${
+                  currentPage === "admin" ? "bg-purple-100 text-purple-700" : ""
+                }`}
+              >
+                <i
+                  className={`fas fa-user-shield text-gray-600 ${
+                    currentPage === "admin" ? "text-purple-700" : ""
+                  }`}
+                ></i>
+                <span
+                  className={`font-medium ${
+                    currentPage === "admin"
+                      ? "text-purple-700"
+                      : "text-gray-700"
+                  }`}
+                >
+                  Admin
+                </span>
+              </button>
+            </li>
+          )}
         </ul>
       </nav>
 
