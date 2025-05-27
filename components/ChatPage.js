@@ -12,13 +12,13 @@ export default function ChatPage({
 }) {
   const [sessions, setSessions] = useState([]);
   const [activeSessionId, setActiveSessionId] = useState(null);
-  const [currentMessages, setCurrentMessages] = useState([]); // For the active session
+  const [currentMessages, setCurrentMessages] = useState([]);
   const [inputValue, setInputValue] = useState("");
 
-  const [isLoadingSessions, setIsLoadingSessions] = useState(false);
+  const [isLoadingSessions, setIsLoadingSessions] = useState(true);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
-  const [isSendingMessage, setIsSendingMessage] = useState(false); // For Gemini response when sending message
-  const [isCreatingSession, setIsCreatingSession] = useState(false); // For new session creation
+  const [isSendingMessage, setIsSendingMessage] = useState(false);
+  const [isCreatingSession, setIsCreatingSession] = useState(false);
 
   const chatMessagesEndRef = useRef(null);
   const inputRef = useRef(null);
@@ -31,50 +31,61 @@ export default function ChatPage({
   useEffect(scrollToBottom, [currentMessages]);
 
   // Fetch user's chat sessions
-  const fetchSessions = useCallback(async () => {
-    if (!currentUser || !apiClient?.getChatSessionsAPI) {
-      setSessions([]);
-      return;
-    }
-    setIsLoadingSessions(true);
-    try {
-      const fetchedSessions = await apiClient.getChatSessionsAPI();
-      setSessions(fetchedSessions || []);
-      // If no active session but sessions exist, and not currently loading messages for another, select the first one.
-      if (
-        !activeSessionId &&
-        fetchedSessions &&
-        fetchedSessions.length > 0 &&
-        !isLoadingMessages
-      ) {
-        setActiveSessionId(fetchedSessions[0]._id);
-      } else if (fetchedSessions.length === 0) {
-        setActiveSessionId(null); // No sessions, no active session
-        setCurrentMessages([
-          {
-            sender: "bot",
-            text: "Start a new chat or select an existing one from the panel!",
-          },
-        ]);
+  const fetchSessions = useCallback(
+    async (shouldSetActiveToFirst = false) => {
+      if (!currentUser || !apiClient?.getChatSessionsAPI) {
+        setSessions([]);
+        setIsLoadingSessions(false); // Ensure loading is false
+        return;
       }
-    } catch (error) {
-      console.error("Error fetching chat sessions:", error);
-      setSessions([]); // Clear sessions on error
-      // Display error to user?
-    } finally {
-      setIsLoadingSessions(false);
-    }
-  }, [currentUser, apiClient, activeSessionId, isLoadingMessages]); // Added activeSessionId & isLoadingMessages to dep array for initial load logic
+      setIsLoadingSessions(true);
+      try {
+        const fetchedSessions = await apiClient.getChatSessionsAPI();
+        const validSessions = fetchedSessions || [];
+        setSessions(validSessions);
+
+        if (
+          shouldSetActiveToFirst &&
+          validSessions.length > 0 &&
+          !activeSessionId
+        ) {
+          // Only set active session if explicitly told to and no session is currently active
+          // This prevents fetchSessions from resetting activeSessionId if it was already set by user action
+          setActiveSessionId(validSessions[0]._id);
+        } else if (validSessions.length === 0) {
+          setActiveSessionId(null); // No sessions, clear active
+        }
+        // If activeSessionId exists but is not in the new list of sessions, clear it
+        else if (
+          activeSessionId &&
+          !validSessions.find((s) => s._id === activeSessionId)
+        ) {
+          setActiveSessionId(null);
+          setCurrentMessages([
+            {
+              sender: "bot",
+              text: "Selected session no longer exists. Please choose another.",
+            },
+          ]);
+        }
+      } catch (error) {
+        console.error("Error fetching chat sessions:", error);
+        setSessions([]);
+      } finally {
+        setIsLoadingSessions(false);
+      }
+    },
+    [currentUser, apiClient, activeSessionId]
+  );
 
   useEffect(() => {
     if (currentUser) {
-      // Only fetch sessions if a user is logged in
-      fetchSessions();
+      fetchSessions(true); // On initial load/user change, try to set the first session as active
     } else {
-      // User logged out
       setSessions([]);
       setActiveSessionId(null);
       setCurrentMessages([]);
+      setIsLoadingSessions(false);
     }
   }, [currentUser, fetchSessions]); // Rerun if currentUser changes
 
@@ -83,10 +94,9 @@ export default function ChatPage({
     async (sessionId) => {
       if (!sessionId || !currentUser || !apiClient?.getChatSessionMessagesAPI) {
         setCurrentMessages(
-          activeSessionId
-            ? []
-            : [{ sender: "bot", text: "Select or start a chat." }]
+          sessionId ? [] : [{ sender: "bot", text: "Select or start a chat." }]
         );
+        setIsLoadingMessages(false); // Ensure loading state is reset
         return;
       }
       setIsLoadingMessages(true);
@@ -112,9 +122,10 @@ export default function ChatPage({
         setIsLoadingMessages(false);
       }
     },
-    [currentUser, apiClient, activeSessionId]
-  ); // Added activeSessionId
+    [currentUser, apiClient]
+  ); // Removed activeSessionId, it's passed as arg
 
+  // Effect to load messages when activeSessionId changes
   useEffect(() => {
     if (activeSessionId) {
       fetchMessagesForSession(activeSessionId);
@@ -124,16 +135,15 @@ export default function ChatPage({
       !isLoadingSessions &&
       !isCreatingSession
     ) {
-      // This handles the case where user is logged in, no sessions are loaded yet, and not creating one
       setCurrentMessages([
         { sender: "bot", text: "Start a new chat to begin!" },
       ]);
     } else if (!currentUser) {
       setCurrentMessages([]);
     }
+    // No dependency on fetchMessagesForSession to prevent re-triggering from its own definition change
   }, [
     activeSessionId,
-    fetchMessagesForSession,
     currentUser,
     sessions,
     isLoadingSessions,
@@ -152,9 +162,7 @@ export default function ChatPage({
     }
     setIsCreatingSession(true);
     try {
-      const newSessionData = await apiClient.startNewChatSessionAPI(""); // Start with an empty first message from user
-
-      // Add to top of sessions list and make it active
+      const newSessionData = await apiClient.startNewChatSessionAPI("");
       const newSessionEntry = {
         _id: newSessionData.sessionId,
         title: newSessionData.sessionTitle,
@@ -163,13 +171,13 @@ export default function ChatPage({
           "Chat started",
         lastActivity: new Date(),
       };
+      // Prepend to sessions and make active
       setSessions((prev) => [
         newSessionEntry,
         ...prev.filter((s) => s._id !== newSessionData.sessionId),
       ]);
-
-      setActiveSessionId(newSessionData.sessionId); // This will trigger useEffect to fetch messages
-      setCurrentMessages(newSessionData.messages); // Set messages immediately
+      setActiveSessionId(newSessionData.sessionId); // This will trigger useEffect to load its messages
+      setCurrentMessages(newSessionData.messages); // Optimistically set messages
 
       if (updateUserCredits && newSessionData.currentCredits !== undefined) {
         updateUserCredits(newSessionData.currentCredits);
@@ -210,6 +218,7 @@ export default function ChatPage({
     setCurrentMessages((prev) => [...prev, newUserMessage]);
 
     const messageToSend = inputValue.trim();
+
     setInputValue("");
     setIsSendingMessage(true);
 
@@ -234,7 +243,9 @@ export default function ChatPage({
             s._id === activeSessionId
               ? {
                   ...s,
-                  preview: response.reply.substring(0, 50) + "...",
+                  preview:
+                    response.reply.substring(0, 50) +
+                    (response.reply.length > 50 ? "..." : ""),
                   lastActivity: new Date(),
                 }
               : s
@@ -260,7 +271,12 @@ export default function ChatPage({
     }
   };
 
-  if (!currentUser) {
+  const handleSessionSelect = (sessionId) => {
+    if (isSendingMessage || isLoadingMessages) return; // Don't switch if an operation is in progress
+    setActiveSessionId(sessionId);
+  };
+
+  if (!currentUser && !isLoadingSessions) {
     return (
       <div className="flex flex-col items-center justify-center h-full text-gray-500 py-10">
         <i className="fas fa-comments text-4xl mb-4 text-purple-400"></i>
@@ -269,138 +285,154 @@ export default function ChatPage({
     );
   }
 
+  const activeSessionTitle = activeSessionId
+    ? sessions.find((s) => s._id === activeSessionId)?.title ||
+      "Loading chat..."
+    : "Select or Start a Chat";
+
   return (
-    <div className="flex flex-grow h-[calc(100vh-var(--header-height,100px))]">
+    <div className="flex flex-grow h-[calc(100vh-var(--header-height,80px)-2rem)]">
       {" "}
-      {/* Adjust var(--header-height) based on your actual header height */}
+      {/* Adjusted height, assuming header+padding is around 80px + 2rem for page padding */}
       {/* Sessions Sidebar */}
       <div
-        className={`w-full md:w-1/3 lg:w-1/4 bg-slate-100 border-r border-gray-200 p-3 flex flex-col transition-all duration-300 ease-in-out md:translate-x-0 ${
-          sessions.length > 0 || activeSessionId ? "md:block" : "md:block"
-        }`}
+        className={`w-full md:w-[280px] lg:w-[320px] bg-slate-50 border-r border-gray-200 p-3 flex flex-col transition-all duration-300 ease-in-out md:translate-x-0 shadow-sm`}
       >
-        {" "}
-        {/* Simpler: always block on md+ for now */}
         <button
           onClick={handleStartNewChat}
           disabled={isSendingMessage || isCreatingSession || isLoadingSessions}
-          className="w-full mb-3 bg-purple-600 text-white py-2.5 px-4 rounded-lg hover:bg-purple-700 transition disabled:opacity-60 text-sm font-medium flex items-center justify-center"
+          className="w-full mb-3 bg-purple-600 text-white py-2.5 px-4 rounded-lg hover:bg-purple-700 transition disabled:opacity-60 text-sm font-medium flex items-center justify-center shadow hover:shadow-md"
         >
-          <i className="fas fa-plus mr-2"></i>New Chat
+          {isCreatingSession ? (
+            <>
+              <i className="fas fa-spinner fa-spin mr-2"></i>Creating...
+            </>
+          ) : (
+            <>
+              <i className="fas fa-plus mr-2"></i>New Chat
+            </>
+          )}
         </button>
-        {isLoadingSessions && (
-          <p className="text-xs text-gray-500 text-center py-2">
-            Loading sessions...
-          </p>
-        )}
-        {!isLoadingSessions && sessions.length === 0 && (
-          <p className="text-xs text-gray-500 text-center py-2">
-            No chat sessions yet.
-          </p>
-        )}
-        <ul className="space-y-1 overflow-y-auto flex-grow">
-          {sessions.map((session) => (
-            <li key={session._id}>
-              <button
-                onClick={() => {
-                  if (!isSendingMessage) setActiveSessionId(session._id);
-                }}
-                disabled={isSendingMessage}
-                className={`w-full text-left p-2.5 rounded-md hover:bg-slate-200 text-sm transition-colors ${
-                  activeSessionId === session._id
-                    ? "bg-purple-100 text-purple-800 font-semibold shadow-sm"
-                    : "text-gray-700"
-                }`}
-              >
-                <p className="font-medium truncate">
-                  {session.title ||
-                    `Chat ${formatDate(session.createdAt, true)}`}
-                </p>
-                <p
-                  className={`text-xs truncate ${
+        <div className="flex-grow overflow-y-auto">
+          {isLoadingSessions && (
+            <p className="text-xs text-gray-500 text-center py-2">
+              Loading sessions...
+            </p>
+          )}
+          {!isLoadingSessions && sessions.length === 0 && (
+            <p className="text-xs text-gray-500 text-center py-2">
+              No chat sessions yet. Start one!
+            </p>
+          )}
+          <ul className="space-y-1">
+            {sessions.map((session) => (
+              <li key={session._id}>
+                <button
+                  onClick={() => handleSessionSelect(session._id)}
+                  disabled={
+                    isSendingMessage || isLoadingMessages || isCreatingSession
+                  }
+                  className={`w-full text-left p-2.5 rounded-md hover:bg-slate-200 text-sm transition-colors disabled:opacity-70 ${
                     activeSessionId === session._id
-                      ? "text-purple-600"
-                      : "text-gray-500"
+                      ? "bg-purple-100 text-purple-800 font-semibold shadow-sm"
+                      : "text-gray-700 hover:text-gray-900"
                   }`}
                 >
-                  {session.preview || "No messages yet"}
-                </p>
-              </button>
-            </li>
-          ))}
-        </ul>
+                  <p className="font-medium truncate">
+                    {session.title ||
+                      `Chat ${formatDate(session.createdAt, true)}`}
+                  </p>
+                  <p
+                    className={`text-xs truncate ${
+                      activeSessionId === session._id
+                        ? "text-purple-600"
+                        : "text-gray-500"
+                    }`}
+                  >
+                    {session.preview || "No messages yet"}
+                  </p>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
       </div>
       {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col bg-white">
-        <div className="p-4 sm:p-5 border-b border-gray-200 flex items-center">
-          {/* Mobile hamburger can be here if sessions list is collapsible on mobile */}
+      <div className="flex-1 flex flex-col bg-white shadow-inner">
+        {" "}
+        {/* Added shadow-inner */}
+        <div className="p-4 sm:p-5 border-b border-gray-200 flex items-center sticky top-0 bg-white z-10">
           <h3 className="font-semibold text-gray-800 text-base sm:text-lg truncate flex-1">
-            {activeSessionId
-              ? sessions.find((s) => s._id === activeSessionId)?.title ||
-                "Loading chat..."
-              : "Select or Start a Chat"}
+            {activeSessionTitle}
           </h3>
         </div>
-
-        <div className="flex-1 p-4 sm:p-6 overflow-y-auto space-y-3 sm:space-y-4">
-          {isLoadingMessages && (
-            <p className="text-center text-gray-500">Loading messages...</p>
+        <div className="flex-1 p-4 sm:p-6 overflow-y-auto space-y-3 sm:space-y-4 bg-slate-50">
+          {isLoadingMessages && activeSessionId && (
+            <p className="text-center text-gray-500 py-4">
+              Loading messages...
+            </p>
+          )}
+          {!activeSessionId && !isLoadingMessages && !isLoadingSessions && (
+            <div className="text-center text-gray-500 flex flex-col items-center justify-center h-full">
+              <i className="far fa-comments text-5xl text-gray-300 mb-3"></i>
+              <p>Select a chat from the left or start a new one.</p>
+            </div>
           )}
           {!isLoadingMessages &&
             currentMessages.length === 0 &&
             activeSessionId && (
-              <p className="text-center text-gray-500">
+              <p className="text-center text-gray-500 py-4">
                 No messages in this session yet. Send one!
               </p>
             )}
-          {!isLoadingMessages &&
-            currentMessages.length === 0 &&
-            !activeSessionId &&
-            !isLoadingSessions && (
-              <div className="text-center text-gray-500 flex flex-col items-center justify-center h-full">
-                <i className="far fa-comments text-5xl text-gray-300 mb-3"></i>
-                <p>Select a chat from the left or start a new one.</p>
-              </div>
-            )}
-          {currentMessages.map((msg, index) => (
-            <div
-              key={msg._id || index}
-              className={`flex gap-2 sm:gap-3 ${
-                msg.sender === "user" ? "justify-end" : ""
-              }`}
-            >
-              {msg.sender !== "user" && (
-                <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-r from-purple-500 to-indigo-600 rounded-full flex items-center justify-center flex-shrink-0 shadow">
-                  <i className="fas fa-robot text-white text-xs sm:text-sm"></i>
-                </div>
-              )}
+
+          {currentMessages.map(
+            (
+              msg,
+              index // Ensure unique key if _id is not always present (e.g. for temp messages)
+            ) => (
               <div
-                className={`${
-                  msg.sender === "user"
-                    ? "chat-bubble-user text-white"
-                    : "chat-bubble-bot"
-                } p-2.5 px-3.5 sm:p-3 sm:px-4 max-w-[80%] sm:max-w-md shadow-sm`}
+                key={msg._id || `msg-${index}-${msg.timestamp}`}
+                className={`flex gap-2 sm:gap-3 ${
+                  msg.sender === "user" ? "justify-end" : ""
+                }`}
               >
-                <p
-                  className={`text-sm ${
-                    msg.sender === "user" ? "" : "text-gray-800"
-                  }`}
+                {msg.sender !== "user" && (
+                  <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-r from-purple-500 to-indigo-600 rounded-full flex items-center justify-center flex-shrink-0 shadow">
+                    <i className="fas fa-robot text-white text-xs sm:text-sm"></i>
+                  </div>
+                )}
+                <div
+                  className={`${
+                    msg.sender === "user"
+                      ? "chat-bubble-user text-white"
+                      : "chat-bubble-bot"
+                  } p-2.5 px-3.5 sm:p-3 sm:px-4 max-w-[80%] sm:max-w-md shadow-sm`}
                 >
-                  {msg.text}
-                </p>
-              </div>
-              {msg.sender === "user" && (
-                <div className="w-7 h-7 sm:w-8 sm:h-8 bg-slate-300 rounded-full flex items-center justify-center flex-shrink-0 shadow">
-                  <i className="fas fa-user text-slate-600 text-2xs sm:text-xs"></i>
+                  <p
+                    className={`text-sm ${
+                      msg.sender === "user" ? "" : "text-gray-800"
+                    }`}
+                  >
+                    {msg.text}
+                  </p>
                 </div>
-              )}
-            </div>
-          ))}
+                {msg.sender === "user" && (
+                  <div className="w-7 h-7 sm:w-8 sm:h-8 bg-slate-200 rounded-full flex items-center justify-center flex-shrink-0 shadow">
+                    {" "}
+                    {/* Changed user bubble color */}
+                    <i className="fas fa-user text-slate-600 text-2xs sm:text-xs"></i>
+                  </div>
+                )}
+              </div>
+            )
+          )}
           <div ref={chatMessagesEndRef} />
         </div>
-
         {isSendingMessage && activeSessionId && (
-          <div className="px-4 sm:px-6 pb-1 sm:pb-2">
+          <div className="px-4 sm:px-6 pb-1 sm:pb-2 bg-slate-50">
+            {" "}
+            {/* Match message area bg */}
             <div className="flex gap-2 sm:gap-3">
               <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-r from-purple-500 to-indigo-600 rounded-full flex items-center justify-center flex-shrink-0">
                 <i className="fas fa-robot text-white text-xs sm:text-sm"></i>
@@ -413,8 +445,9 @@ export default function ChatPage({
             </div>
           </div>
         )}
-
-        <div className="p-4 sm:p-6 border-t border-gray-200">
+        <div className="p-4 sm:p-6 border-t border-gray-200 bg-white">
+          {" "}
+          {/* Input area bg */}
           <div className="flex gap-2 sm:gap-4">
             <input
               ref={inputRef}
@@ -422,7 +455,7 @@ export default function ChatPage({
               placeholder={
                 activeSessionId
                   ? "Type your message..."
-                  : "Select a chat to reply"
+                  : "Select or start a chat to reply"
               }
               className="flex-1 px-3 py-2.5 sm:px-4 sm:py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base disabled:bg-gray-100"
               value={inputValue}
@@ -434,23 +467,48 @@ export default function ChatPage({
                 handleSendMessage()
               }
               disabled={
-                isSendingMessage || !activeSessionId || isLoadingMessages
+                isSendingMessage ||
+                !activeSessionId ||
+                isLoadingMessages ||
+                isCreatingSession
               }
             />
             <button
               onClick={handleSendMessage}
-              className="bg-gradient-to-r from-purple-500 to-indigo-600 text-white px-4 py-2.5 sm:px-6 sm:py-3 rounded-xl hover:shadow-lg transition-all disabled:opacity-60"
+              className="bg-gradient-to-r from-purple-500 to-indigo-600 text-white px-4 py-2.5 sm:px-6 sm:py-3 rounded-xl hover:shadow-lg transition-all disabled:opacity-60 shadow hover:shadow-md"
               disabled={
                 isSendingMessage ||
                 !activeSessionId ||
                 !inputValue.trim() ||
-                isLoadingMessages
+                isLoadingMessages ||
+                isCreatingSession
               }
             >
               <i className="fas fa-paper-plane"></i>
             </button>
           </div>
           {/* Quick Responses can be re-added here if desired, ensure they are disabled if no active session */}
+          <div className="flex gap-2 mt-3 sm:mt-4 flex-wrap">
+            {["I feel stressed", "I need to talk", "Help me relax"].map(
+              (text) => (
+                <button
+                  key={text}
+                  onClick={() => {
+                    if (activeSessionId) setInputValue(text);
+                  }} // Set input value, user still needs to send
+                  disabled={
+                    !activeSessionId ||
+                    isSendingMessage ||
+                    isLoadingMessages ||
+                    isCreatingSession
+                  }
+                  className="px-3 py-1.5 sm:px-4 sm:py-2 bg-gray-100 text-gray-700 rounded-full text-xs sm:text-sm hover:bg-gray-200 transition-colors disabled:opacity-50"
+                >
+                  {text}
+                </button>
+              )
+            )}
+          </div>
         </div>
       </div>
     </div>
