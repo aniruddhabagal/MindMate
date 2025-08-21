@@ -2,7 +2,7 @@
 
 A modern, privacy‑first mental‑wellness web app built with Next.js (App Router). The project focuses on a clean, fast UI and an extensible architecture so you can iterate quickly on features such as mood check‑ins, exercises, and resource libraries.
 
-> Live (if deployed): **mindmate.aniruddha.fyi**
+> Live: **mindmate.aniruddha.fyi**
 
 ---
 
