@@ -1,6 +1,6 @@
 # MindMate
 
-A modern, privacy‑first mental‑wellness web app built with Next.js (App Router). The project focuses on a clean, fast UI and an extensible architecture so you can iterate quickly on features such as mood check‑ins, exercises, and resource libraries.
+A modern, privacy‑first **mental‑wellness companion web app** built with Next.js (App Router). MindMate is designed to help users take small but meaningful steps toward better mental health by offering guided exercises, mood tracking, journaling, and resource sharing. It emphasizes simplicity, privacy, and accessibility, so users can focus on their wellness without friction.
 
 > Live: **mindmate.aniruddha.fyi**
 
@@ -8,6 +8,7 @@ A modern, privacy‑first mental‑wellness web app built with Next.js (App Rout
 
 ## Table of contents
 
+* [What it does](#what-it-does)
 * [Features](#features)
 * [Tech stack](#tech-stack)
 * [Getting started](#getting-started)
@@ -21,6 +22,21 @@ A modern, privacy‑first mental‑wellness web app built with Next.js (App Rout
 
 ---
 
+## What it does
+
+MindMate acts as a **personal wellness toolkit**. It is not a replacement for therapy, but it provides helpful, everyday tools for stress management and reflection:
+
+* **Daily mood check‑ins** – Users can log their emotions in seconds and see trends over time.
+* **Guided activities** – Short exercises like deep breathing, gratitude journaling, or positive affirmations to reduce stress.
+* **Journaling space** – A private place to note thoughts, reflections, or progress.
+* **Wellness resources** – Curated articles, tips, and links related to mental health.
+* **Chatbot support (optional)** – A friendly AI chatbot for reflective conversations or quick mood support.
+* **Responsive design** – Works seamlessly on mobile and desktop.
+
+MindMate is lightweight, fast, and can easily integrate new features such as reminders, gamification (streaks/points), or community spaces.
+
+---
+
 ## Features
 
 * **Next.js App Router**: server components, file‑system routing, route groups, metadata.
@@ -28,8 +44,6 @@ A modern, privacy‑first mental‑wellness web app built with Next.js (App Rout
 * **Responsive UI** with Tailwind CSS and utility‑first styling.
 * **Production‑ready configs** for ESLint, Tailwind, and PostCSS.
 * **Easy deployment** to Vercel or your platform of choice.
-
-> Note: Feature modules (e.g., check‑ins, exercises, resources) are organized under `app/` as routes and in `components/` for UI building blocks.
 
 ---
 
@@ -86,10 +100,9 @@ npm start
 Create a `.env.local` in the project root for any secrets/keys you need. Common examples:
 
 ```bash
-# Example placeholders – remove any that you do not use
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
-# AUTH_SECRET=...            # if using NextAuth or JWT-based sessions
-# DATABASE_URL=...           # if using a DB (Mongo/Prisma/etc.)
+# AUTH_SECRET=...
+# DATABASE_URL=...
 # ANALYTICS_WRITE_KEY=...
 ```
 
@@ -105,8 +118,6 @@ The project uses standard Next.js scripts (check `package.json`):
 * `build` – build for production
 * `start` – run the production server
 * `lint` – run ESLint
-
-Run with your package manager, e.g. `npm run dev`.
 
 ---
 
@@ -134,60 +145,47 @@ MindMate/
 
 ## Key files & what they do
 
-* **`app/`** – The heart of the app. Each folder under `app/` is a route. Common patterns:
-
-  * `app/layout.tsx|jsx` – Root layout; global providers and styles.
-  * `app/page.tsx|jsx` – Index route.
-  * `app/(group)/feature/page.tsx` – Route groups for logical separation.
-  * `app/api/*` – Route handlers for serverless APIs.
-* **`components/`** – Headless, reusable UI building blocks (forms, cards, modals, nav). Keep them pure and prop‑driven.
-* **`lib/`** – Non‑UI utilities: fetch wrappers, validation, constants, hooks (client/server), 3rd‑party SDK setup.
-* **`models/`** – Centralized data models/schemas. If not using a DB yet, this can be empty or removed.
-* **`old_html_based/`** – Earlier HTML/JS prototype; useful for reference or migration history.
-* **`public/`** – Static assets served at `/`. Place favicons, og images, logos here.
-* **`middleware.js`** – Edge middleware (e.g., simple auth guards, headers, redirects). Runs before requests reach routes.
-* **`next.config.mjs`** – Next.js config (image domains, experimental flags, headers/rewrites).
-* **`tailwind.config.js`** – Tailwind theme, content globs, and plugins.
-* **`postcss.config.js`** – PostCSS plugins used by Tailwind (and others if added).
-* **`eslint.config.mjs`** – Lint rules. Keep strict to maintain quality.
-* **`jsconfig.json`** – Path aliases like `@/components` / `@/lib` to simplify imports.
+* **`app/`** – The heart of the app. Each folder under `app/` is a route.
+* **`components/`** – Reusable UI building blocks.
+* **`lib/`** – Utilities, constants, hooks, and API wrappers.
+* **`models/`** – Data models/schemas.
+* **`old_html_based/`** – Legacy prototypes for reference.
+* **`public/`** – Static assets served at `/`.
+* **`middleware.js`** – Edge middleware for auth/headers.
+* **Configs** (`next.config.mjs`, `tailwind.config.js`, `postcss.config.js`, `eslint.config.mjs`) – project tooling and optimizations.
 
 ---
 
 ## Coding standards
 
-* **Type safety:** Prefer TypeScript. If using JS, add JSDoc for clarity.
-* **Components:** Keep UI components small, composable, and stateless where possible.
-* **Styling:** Use Tailwind utility classes; extract shared patterns to components.
-* **Data fetching:** Use server components/route handlers when possible; cache appropriately.
-* **Commits:** Conventional Commits (`feat:`, `fix:`, `chore:`) and small, focused PRs.
-* **Testing:** Add unit tests for critical logic in `lib/` and integration tests for routes.
+* Keep components small and composable.
+* Use Tailwind utility classes.
+* Favor server components and caching for data fetching.
+* Use Conventional Commits (`feat:`, `fix:`, etc.).
+* Add tests for critical logic.
 
 ---
 
 ## Contributing
 
-1. Fork the repo & create a feature branch: `git checkout -b feat/my-feature`
-2. Install dependencies: `npm i`
-3. Run `npm run dev` and implement your changes
-4. Lint & format: `npm run lint`
-5. Open a PR with a clear description and screenshots if UI changes
-
-> For larger changes, consider opening an issue first to discuss the approach.
+1. Fork the repo & create a feature branch.
+2. Install dependencies & run dev server.
+3. Lint and test before committing.
+4. Open a PR with clear details.
 
 ---
 
 ## License
 
-Add a license of your choice (MIT is common for web apps). Create a `LICENSE` file in the project root.
+Add a license of your choice (MIT is common).
 
 ---
 
 ### Notes & next steps
 
-* If you enable authentication or a database, update **Environment** and **Project structure** accordingly.
-* Replace generic feature bullets with your real modules (e.g., mood tracker, journaling, breathing exercises, resources, chatbot).
-* Add screenshots to `/public` (e.g., `/public/og.png`) and embed them here.
+* Document real modules as you build them (e.g., mood tracker, journaling, breathing exercises).
+* Add screenshots to `/public` and reference them here.
+* Expand chatbot or AI‑driven features if integrated.
 
 ---
 
